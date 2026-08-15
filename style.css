@@ -22,8 +22,10 @@ a{color:var(--red)}
           backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
 .sitehead .in{max-width:var(--maxw);margin:0 auto;padding:10px 16px;
               display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.brand{font-weight:700;font-size:1.02rem;color:var(--ink);text-decoration:none;letter-spacing:.02em}
+.brand{font-weight:700;font-size:1.02rem;color:var(--ink);text-decoration:none;letter-spacing:.02em;
+       display:inline-flex;align-items:center;gap:.45em}
 .brand span{color:var(--red)}
+.brand img{height:1.35em;width:auto}
 nav{display:flex;gap:2px;flex-wrap:wrap}
 nav a,nav span{font-size:.82rem;text-decoration:none;color:#444;padding:6px 9px;border-radius:6px;
                white-space:nowrap}
