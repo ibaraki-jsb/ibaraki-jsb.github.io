@@ -293,9 +293,14 @@ function render(){
   }).join('');
 }
 
+// ページの最終更新日(公開日時から自動。手動メンテ不要)
+function pageStamp(){
+  const m = new Date(document.lastModified);
+  return isNaN(m) ? '' : ' / ページ更新 ' + m.getFullYear() + '/' + (m.getMonth()+1) + '/' + m.getDate();
+}
 qInput.addEventListener('input', render);
 clearBtn.addEventListener('click', () => { qInput.value = ''; render(); qInput.focus(); });
-document.getElementById('stamp').textContent = '掲載資料 ' + DATA.length + ' 件';
+document.getElementById('stamp').textContent = '掲載資料 ' + DATA.length + ' 件' + pageStamp();
 buildTabs(); render();
 
 // ---- シート直読み。成功したら最新データに差し替える。失敗時は焼き込みデータのまま動く ----
@@ -339,7 +344,7 @@ function tryApplyLive(){
     ORDER.forEach((c,i) => idx[c] = i);
     DATA.sort((a,b) => (idx[a.c] !== undefined ? idx[a.c] : 999) - (idx[b.c] !== undefined ? idx[b.c] : 999));
     categories = computeCategories();
-    document.getElementById('stamp').textContent = '掲載資料 ' + DATA.length + ' 件(自動更新)';
+    document.getElementById('stamp').textContent = '掲載資料 ' + DATA.length + ' 件(自動更新)' + pageStamp();
     buildTabs(); render();
   }catch(e){ console.warn('シートデータの解釈に失敗', e); }
 }

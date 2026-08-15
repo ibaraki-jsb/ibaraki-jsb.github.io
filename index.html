@@ -117,6 +117,7 @@
     お問い合わせ: <a href="mailto:ibaraki.jsb.soumu@gmail.com">ibaraki.jsb.soumu@gmail.com</a>
     <div class="fine">このサイトの資料は本部が随時更新しています。</div>
     <div class="fine">スマホでは、ブラウザの共有/メニューから「ホーム画面に追加」すると、次回からアプリのように開けます。</div>
+    <div class="fine">最終更新: <span id="page-updated">—</span></div>
   </div>
 </footer>
 
@@ -150,6 +151,15 @@ function renderNotices(items){
   }).join('');
 }
 renderNotices(FALLBACK_NOTICES);
+
+// ページの最終更新日(このファイルの公開日時から自動表示。手動メンテ不要)
+{
+  const m = new Date(document.lastModified);
+  if (!isNaN(m)) {
+    document.getElementById('page-updated').textContent =
+      m.getFullYear() + '/' + (m.getMonth()+1) + '/' + m.getDate();
+  }
+}
 
 // 「お知らせ」シート(列: 日付|内容|リンク|非表示)があれば差し替える
 function cellText(row, i){
