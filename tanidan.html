@@ -119,9 +119,9 @@ const DATA = [
   {no:'009', name:'茨木体操', cat:'体操', area:'', link:'', contact:''},
   {no:'001', name:'ストーム・アット・ウィンブルドン', cat:'テニス', area:'', link:'', contact:''},
 ];
-// 競技の並びは開くたびにローテーション(日替わり)で、特定競技が常に先頭にならないようにする
+// 競技の並びはリロードごとにローテーションし、特定競技が常に先頭にならないようにする
 const BASE_ORDER = ['剣道','テニス','少林寺拳法','野球','バレーボール','サッカー','体操'];
-const rot = Math.floor(Date.now() / 86400000) % BASE_ORDER.length;
+const rot = Math.floor(Math.random() * BASE_ORDER.length);
 const ORDER = BASE_ORDER.slice(rot).concat(BASE_ORDER.slice(0, rot));
 let sortMode = 'no';   // 'no'=登録番号順(基本) / 'cat'=競技別
 let catFilter = '*';   // 競技別のときの絞り込み(*=ALL)
