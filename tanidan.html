@@ -30,6 +30,7 @@
   .sort button{border:1px solid var(--line);background:var(--chip);color:var(--ink);
                padding:5px 14px;border-radius:999px;font-size:.85rem;cursor:pointer;font-family:inherit}
   .sort button.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
+  .catfilter{margin-top:10px;flex-wrap:wrap}
   .group{margin-top:24px}
   .group h2{font-size:.95rem;color:var(--red);margin:0 0 6px;font-weight:700;
             letter-spacing:.02em;display:flex;align-items:baseline;gap:.6em}
@@ -76,6 +77,7 @@
     <button data-mode="no" class="on">登録番号順</button>
     <button data-mode="cat">競技別</button>
   </div>
+  <div class="sort catfilter" id="cat-filter" hidden></div>
   <div id="out"></div>
   <div class="note">2026年度登録 / <span id="page-updated"></span></div>
 </div>
@@ -117,8 +119,12 @@ const DATA = [
   {no:'009', name:'茨木体操', cat:'体操', area:'', link:'', contact:''},
   {no:'001', name:'ストーム・アット・ウィンブルドン', cat:'テニス', area:'', link:'', contact:''},
 ];
-const ORDER = ['剣道','テニス','少林寺拳法','野球','バレーボール','サッカー','体操'];
+// 競技の並びは開くたびにローテーション(日替わり)で、特定競技が常に先頭にならないようにする
+const BASE_ORDER = ['剣道','テニス','少林寺拳法','野球','バレーボール','サッカー','体操'];
+const rot = Math.floor(Date.now() / 86400000) % BASE_ORDER.length;
+const ORDER = BASE_ORDER.slice(rot).concat(BASE_ORDER.slice(0, rot));
 let sortMode = 'no';   // 'no'=登録番号順(基本) / 'cat'=競技別
+let catFilter = '*';   // 競技別のときの絞り込み(*=ALL)
 let lastData = DATA;
 
 function esc(s){ return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -160,9 +166,10 @@ function render(data){
       .map(d => Object.assign({}, d, {area: d.area, name: d.name + '(' + d.cat + ')'}));
     out.innerHTML = '<div class="group">' + cardsHtml(items) + '</div>';
   } else {
-    // 競技別(未知の種目も末尾に表示)
-    const cats = ORDER.filter(c => data.some(d => d.cat === c))
+    // 競技別(未知の種目も末尾に表示)。絞り込み中はその競技だけ
+    let cats = ORDER.filter(c => data.some(d => d.cat === c))
       .concat([...new Set(data.map(d => d.cat))].filter(c => c && !ORDER.includes(c)));
+    if (catFilter !== '*') { cats = cats.filter(c => c === catFilter); }
     out.innerHTML = cats.map(cat => {
       const items = data.filter(d => d.cat === cat);
       return '<div class="group"><h2>' + esc(cat) + '<span class="n">' + items.length + '団</span></h2>' +
@@ -172,9 +179,25 @@ function render(data){
   document.querySelectorAll('#sort-toggle button').forEach(b => {
     b.classList.toggle('on', b.dataset.mode === sortMode);
   });
+  buildCatFilter(data);
+}
+
+// 競技の絞り込みボタン(競技別のときだけ表示)
+function buildCatFilter(data){
+  const box = document.getElementById('cat-filter');
+  box.hidden = (sortMode !== 'cat');
+  if (box.hidden) { return; }
+  const cats = ORDER.filter(c => data.some(d => d.cat === c))
+    .concat([...new Set(data.map(d => d.cat))].filter(c => c && !ORDER.includes(c)));
+  box.innerHTML = [['*','ALL']].concat(cats.map(c => [c, c])).map(([key,label]) =>
+    '<button data-cat="' + esc(key) + '"' + (key === catFilter ? ' class="on"' : '') + '>' + esc(label) + '</button>'
+  ).join('');
+  box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    catFilter = b.dataset.cat; render(lastData);
+  }));
 }
 document.querySelectorAll('#sort-toggle button').forEach(b => {
-  b.addEventListener('click', () => { sortMode = b.dataset.mode; render(lastData); });
+  b.addEventListener('click', () => { sortMode = b.dataset.mode; catFilter = '*'; render(lastData); });
 });
 render(DATA);
 
