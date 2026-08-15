@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>単位団の紹介 | 茨木市スポーツ少年団本部</title>
+<!-- ホーム画面追加・ブックマーク用のアイコン(PWA) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#b71c1c">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=2">
+<!--
+  単位団の紹介ページ。
+  データの正本: K:\マイドライブ\04.本部役員名簿\2026年度本部役員名簿.xls の「登録一覧表」シート。
+  年度更新や加入・脱退があったら、下の一覧(DATA)を正本に合わせて直す。
+  代表者名・電話番号・団員数は個人情報・変動値のため公開ページには載せない。
+-->
+<style>
+  .pagehead{background:var(--red-pale);border-bottom:1px solid #f0d5d5}
+  .pagehead .wrap{padding:18px 16px}
+  .pagehead h1{font-size:1.25rem;color:var(--red);letter-spacing:.02em}
+  .pagehead p{font-size:.85rem;color:#7a5a5a;margin-top:2px}
+
+  .group{margin-top:24px}
+  .group h2{font-size:.95rem;color:var(--red);margin:0 0 6px;font-weight:700;
+            letter-spacing:.02em;display:flex;align-items:baseline;gap:.6em}
+  .group h2 .n{color:var(--sub);font-size:.8em;font-weight:400}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+  .card{border:1px solid var(--line);border-radius:10px;background:#fff;padding:12px 14px}
+  .card .head{display:flex;align-items:center;gap:10px}
+  .card .no{flex:0 0 auto;font-size:.7rem;color:var(--sub);background:var(--chip);
+            border-radius:5px;padding:2px 7px;letter-spacing:.04em}
+  .card .name{font-size:.92rem;font-weight:600;line-height:1.5;word-break:break-word}
+  .card .detail{margin-top:6px;font-size:.8rem;color:var(--sub);line-height:1.7;word-break:break-word}
+  .card .detail a{color:var(--red)}
+  .note{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);
+        font-size:.78rem;color:var(--sub);text-align:right}
+</style>
+</head>
+<body>
+
+<header class="sitehead">
+  <div class="in">
+    <a class="brand" href="./"><img src="icons/logo.png" alt="スポーツ少年団ロゴ">茨木市<span>スポーツ少年団</span>本部</a>
+    <nav>
+      <a href="./">ホーム</a>
+      <a href="shiryo.html">資料ダウンロード</a>
+      <span class="soon">報告・申請<small>(準備中)</small></span>
+      <span class="soon">日程・行事<small>(準備中)</small></span>
+      <a class="cur" href="tanidan.html">単位団の紹介</a>
+    </nav>
+  </div>
+</header>
+
+<div class="pagehead">
+  <div class="wrap">
+    <h1>単位団の紹介</h1>
+    <p>茨木市スポーツ少年団に登録している単位団の一覧です(2026年度・24団)。<br>
+       入団のお問い合わせは、各団の連絡先(記載のある団)または本部
+       <a href="mailto:ibaraki.jsb.soumu@gmail.com">ibaraki.jsb.soumu@gmail.com</a> までどうぞ。</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="out"></div>
+  <div class="note">2026年度 登録一覧表にもとづく / <span id="page-updated"></span></div>
+</div>
+
+<footer>
+  <div class="in">
+    茨木市スポーツ少年団本部 総務広報委員会<br>
+    お問い合わせ: <a href="mailto:ibaraki.jsb.soumu@gmail.com">ibaraki.jsb.soumu@gmail.com</a>
+  </div>
+</footer>
+
+<script>
+// 正本: 2026年度本部役員名簿.xls「登録一覧表」(2026-08-15転記)。番号=市登録番号末尾3桁
+// area(主な活動地域: 学校名など)・link(団のサイト・SNS)・contact(団が公開を了承した連絡先のみ。
+// 代表者の個人電話は載せない)は判明した団から追記する。空欄は表示されない
+const DATA = [
+  {no:'014', name:'沢池レッドナイト', cat:'野球', area:'', link:'', contact:''},
+  {no:'015', name:'沢良宣シャークス', cat:'野球', area:'', link:'', contact:''},
+  {no:'024', name:'シーパーズ', cat:'野球', area:'', link:'', contact:''},
+  {no:'027', name:'東雲', cat:'野球', area:'', link:'', contact:''},
+  {no:'028', name:'玉櫛スラッガー', cat:'野球', area:'', link:'', contact:''},
+  {no:'029', name:'安威インディアンズ', cat:'野球', area:'', link:'', contact:''},
+  {no:'035', name:'中池ファイターズ', cat:'野球', area:'', link:'', contact:''},
+  {no:'038', name:'東太田イーグルス', cat:'野球', area:'', link:'', contact:''},
+  {no:'040', name:'中条ウイングス', cat:'野球', area:'', link:'', contact:''},
+  {no:'042', name:'水真南', cat:'野球', area:'', link:'', contact:''},
+  {no:'043', name:'福井サン・ボーイ', cat:'野球', area:'', link:'', contact:''},
+  {no:'044', name:'玉島アニマルズ', cat:'野球', area:'', link:'', contact:''},
+  {no:'050', name:'郡山フレンズ', cat:'野球', area:'', link:'', contact:''},
+  {no:'052', name:'ローズ・18', cat:'野球', area:'', link:'', contact:''},
+  {no:'059', name:'茨木プレジャーズ', cat:'野球', area:'', link:'', contact:''},
+  {no:'048', name:'耳原剣友会', cat:'剣道', area:'', link:'', contact:''},
+  {no:'058', name:'春日誠武会', cat:'剣道', area:'', link:'', contact:''},
+  {no:'066', name:'FC茨木ESB', cat:'サッカー', area:'', link:'', contact:''},
+  {no:'061', name:'KAISERSジュニアバレーボールクラブ', cat:'バレーボール', area:'', link:'', contact:''},
+  {no:'067', name:'玉櫛スポーツバレーボールクラブ', cat:'バレーボール', area:'', link:'', contact:''},
+  {no:'063', name:'少林寺拳法茨木中部', cat:'少林寺拳法', area:'', link:'', contact:''},
+  {no:'068', name:'少林寺拳法茨木南', cat:'少林寺拳法', area:'', link:'', contact:''},
+  {no:'009', name:'茨木体操', cat:'体操', area:'', link:'', contact:''},
+  {no:'001', name:'ストーム・アット・ウィンブルドン', cat:'テニス', area:'', link:'', contact:''},
+];
+const ORDER = ['野球','剣道','サッカー','バレーボール','少林寺拳法','体操','テニス'];
+
+function esc(s){ return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+document.getElementById('out').innerHTML = ORDER.map(cat => {
+  const items = DATA.filter(d => d.cat === cat);
+  if (!items.length) { return ''; }
+  return '<div class="group"><h2>' + esc(cat) + '<span class="n">' + items.length + '団</span></h2>' +
+    '<div class="cards">' + items.map(d => {
+      const lines = [];
+      if (d.area) { lines.push('活動場所: ' + esc(d.area)); }
+      if (d.contact) { lines.push('連絡先: ' + esc(d.contact)); }
+      if (d.link) { lines.push('<a href="' + esc(d.link) + '" target="_blank" rel="noopener">団のサイトを見る</a>'); }
+      return '<div class="card"><div class="head"><span class="no">' + esc(d.no) + '</span>' +
+        '<span class="name">' + esc(d.name) + '</span></div>' +
+        (lines.length ? '<div class="detail">' + lines.join('<br>') + '</div>' : '') + '</div>';
+    }).join('') + '</div></div>';
+}).join('');
+
+// ページの最終更新日(公開日時から自動)
+{
+  const m = new Date(document.lastModified);
+  if (!isNaN(m)) {
+    document.getElementById('page-updated').textContent =
+      'ページ更新 ' + m.getFullYear() + '/' + (m.getMonth()+1) + '/' + m.getDate();
+  }
+}
+</script>
+</body>
+</html>
