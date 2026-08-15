@@ -25,6 +25,10 @@
   .pagehead h1{font-size:1.25rem;color:var(--red);letter-spacing:.02em}
   .pagehead p{font-size:.85rem;color:#7a5a5a;margin-top:2px}
 
+  .sort{margin-top:16px;font-size:.85rem;color:var(--sub);display:flex;align-items:center;gap:6px}
+  .sort button{border:1px solid var(--line);background:var(--chip);color:var(--ink);
+               padding:5px 14px;border-radius:999px;font-size:.85rem;cursor:pointer;font-family:inherit}
+  .sort button.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
   .group{margin-top:24px}
   .group h2{font-size:.95rem;color:var(--red);margin:0 0 6px;font-weight:700;
             letter-spacing:.02em;display:flex;align-items:baseline;gap:.6em}
@@ -66,6 +70,11 @@
 </div>
 
 <div class="wrap">
+  <div class="sort" id="sort-toggle">
+    表示順:
+    <button data-mode="no" class="on">登録番号順</button>
+    <button data-mode="cat">競技別</button>
+  </div>
   <div id="out"></div>
   <div class="note">2026年度 登録一覧表にもとづく / <span id="page-updated"></span></div>
 </div>
@@ -107,18 +116,14 @@ const DATA = [
   {no:'009', name:'茨木体操', cat:'体操', area:'', link:'', contact:''},
   {no:'001', name:'ストーム・アット・ウィンブルドン', cat:'テニス', area:'', link:'', contact:''},
 ];
-const ORDER = ['野球','剣道','サッカー','バレーボール','少林寺拳法','体操','テニス'];
+const ORDER = ['剣道','テニス','少林寺拳法','野球','バレーボール','サッカー','体操'];
+let sortMode = 'no';   // 'no'=登録番号順(基本) / 'cat'=競技別
+let lastData = DATA;
 
 function esc(s){ return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-function render(data){
-  // シートで指定した種目(未知の種目)も末尾に表示する
-  const cats = ORDER.filter(c => data.some(d => d.cat === c))
-    .concat([...new Set(data.map(d => d.cat))].filter(c => c && !ORDER.includes(c)));
-  document.getElementById('out').innerHTML = cats.map(cat => {
-    const items = data.filter(d => d.cat === cat);
-    return '<div class="group"><h2>' + esc(cat) + '<span class="n">' + items.length + '団</span></h2>' +
-      '<div class="cards">' + items.map(d => {
+function cardsHtml(items){
+  return '<div class="cards">' + items.map(d => {
         const lines = [];
         if (d.area) { lines.push('活動場所: ' + esc(d.area)); }
         if (d.time) { lines.push('活動日時: ' + esc(d.time)); }
@@ -142,9 +147,34 @@ function render(data){
         return '<div class="card"><div class="head"><span class="no">' + esc(d.no) + '</span>' +
           '<span class="name">' + esc(d.name) + '</span></div>' +
           (lines.length ? '<div class="detail">' + lines.join('<br>') + '</div>' : '') + '</div>';
-      }).join('') + '</div></div>';
-  }).join('');
+      }).join('') + '</div>';
 }
+
+function render(data){
+  lastData = data;
+  const out = document.getElementById('out');
+  if (sortMode === 'no') {
+    // 登録番号順の一覧(番号カードに種目を添える)
+    const items = [...data].sort((a,b) => a.no.localeCompare(b.no, 'ja', {numeric:true}))
+      .map(d => Object.assign({}, d, {area: d.area, name: d.name + '(' + d.cat + ')'}));
+    out.innerHTML = '<div class="group">' + cardsHtml(items) + '</div>';
+  } else {
+    // 競技別(未知の種目も末尾に表示)
+    const cats = ORDER.filter(c => data.some(d => d.cat === c))
+      .concat([...new Set(data.map(d => d.cat))].filter(c => c && !ORDER.includes(c)));
+    out.innerHTML = cats.map(cat => {
+      const items = data.filter(d => d.cat === cat);
+      return '<div class="group"><h2>' + esc(cat) + '<span class="n">' + items.length + '団</span></h2>' +
+        cardsHtml(items) + '</div>';
+    }).join('');
+  }
+  document.querySelectorAll('#sort-toggle button').forEach(b => {
+    b.classList.toggle('on', b.dataset.mode === sortMode);
+  });
+}
+document.querySelectorAll('#sort-toggle button').forEach(b => {
+  b.addEventListener('click', () => { sortMode = b.dataset.mode; render(lastData); });
+});
 render(DATA);
 
 // ---- 「単位団」シート直読み(資料一覧・お知らせと同じ仕組み)。読めない間は上の焼き込みを表示 ----
