@@ -22,6 +22,18 @@
   /* ヒーロー */
   .hero{position:relative;max-height:520px;overflow:hidden;line-height:0}
   .hero img{width:100%;height:auto;object-fit:cover;max-height:520px}
+  /* PCでは縦幅を画面の3割程度に抑える(スマホは従来どおり) */
+  @media (min-width:561px){
+    .hero{max-height:30vh}
+    .hero img{max-height:30vh}
+  }
+
+  /* ホーム画面追加ボタン(フッタ直上) */
+  .installsec{padding:22px 0 26px;text-align:center;background:var(--bg-alt);border-top:1px solid var(--line)}
+  .installsec button{border:0;background:var(--red);color:#fff;font-weight:700;font-family:inherit;
+    font-size:.95rem;padding:12px 26px;border-radius:999px;cursor:pointer}
+  .installsec button:hover{background:var(--red-hover)}
+  .installsec .hint{margin-top:10px;font-size:.82rem;color:var(--sub)}
   .hero .cap{position:absolute;left:0;right:0;bottom:0;line-height:1.4;color:#fff;
              padding:60px 0 22px;
              background:linear-gradient(transparent, rgba(0,0,0,.28) 30%, rgba(0,0,0,.74))}
@@ -111,12 +123,18 @@
   </div>
 </section>
 
+<!-- ホーム画面追加の案内(アプリとして起動中は自動で非表示) -->
+<section class="installsec" id="install-sec">
+  <div class="wrap">
+    <button id="install-btn" type="button">📲 このサイトをホーム画面に追加</button>
+    <p id="install-hint" class="hint" hidden>iPhoneでは、下の共有ボタン(四角+↑)→「ホーム画面に追加」で登録できます。</p>
+  </div>
+</section>
+
 <footer>
   <div class="in">
     茨木市スポーツ少年団本部 総務広報委員会<br>
     お問い合わせ: <a href="mailto:ibaraki.jsb.soumu@gmail.com">ibaraki.jsb.soumu@gmail.com</a>
-    <div class="fine">このサイトの資料は本部が随時更新しています。</div>
-    <div class="fine">スマホでは、ブラウザの共有/メニューから「ホーム画面に追加」すると、次回からアプリのように開けます。</div>
     <div class="fine">最終更新: <span id="page-updated">—</span></div>
   </div>
 </footer>
@@ -151,6 +169,29 @@ function renderNotices(items){
   }).join('');
 }
 renderNotices(FALLBACK_NOTICES);
+
+// ---- ホーム画面追加ボタン ----
+// Android/PCのChrome系: beforeinstallpromptを捕まえてワンタップでインストール。
+// iPhone(Safari): APIが無いため、タップで手順を表示する。アプリ起動中はボタン自体を隠す。
+{
+  const sec = document.getElementById('install-sec');
+  const btn = document.getElementById('install-btn');
+  const hint = document.getElementById('install-hint');
+  if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+    sec.hidden = true;   // すでにホーム画面から起動している
+  }
+  let deferredPrompt = null;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; });
+  addEventListener('appinstalled', () => { sec.hidden = true; });
+  btn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt = null;
+    } else {
+      hint.hidden = false;  // iOS等: 手順を表示
+    }
+  });
+}
 
 // ページの最終更新日(このファイルの公開日時から自動表示。手動メンテ不要)
 {
