@@ -83,6 +83,10 @@
   @media (max-width:560px){
     .meta{display:none}
     .name{font-size:.9rem}
+    /* スマホ: タブを折り返さず1段の横スクロールにして、貼り付きヘッダーを低く保つ */
+    .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+          scrollbar-width:none;margin:0 -16px;padding:0 16px 10px}
+    .tabs::-webkit-scrollbar{display:none}
   }
 </style>
 </head>
@@ -197,6 +201,11 @@ function computeCategories(){
 let categories = computeCategories();
 
 let filter = '*';
+// URLの ?cat=分類名 で初期表示タブを指定できる(例: shiryo.html?cat=夏季行事)
+{
+  const cat = new URLSearchParams(location.search).get('cat');
+  if (cat && categories.includes(cat)) { filter = cat; }
+}
 const qInput = document.getElementById('q');
 const clearBtn = document.getElementById('clear');
 
@@ -216,6 +225,9 @@ function buildTabs(){
     filter = b.dataset.key;
     buildTabs(); render();
   }));
+  // 横スクロール時、選択中タブを見える位置に寄せる
+  const on = tabs.querySelector('button.on');
+  if (on) { on.scrollIntoView({inline:'center', block:'nearest'}); }
 }
 
 function itemHtml(d, showPath){
