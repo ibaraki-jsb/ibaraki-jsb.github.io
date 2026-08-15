@@ -111,20 +111,62 @@ const ORDER = ['野球','剣道','サッカー','バレーボール','少林寺�
 
 function esc(s){ return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-document.getElementById('out').innerHTML = ORDER.map(cat => {
-  const items = DATA.filter(d => d.cat === cat);
-  if (!items.length) { return ''; }
-  return '<div class="group"><h2>' + esc(cat) + '<span class="n">' + items.length + '団</span></h2>' +
-    '<div class="cards">' + items.map(d => {
-      const lines = [];
-      if (d.area) { lines.push('活動場所: ' + esc(d.area)); }
-      if (d.contact) { lines.push('連絡先: ' + esc(d.contact)); }
-      if (d.link) { lines.push('<a href="' + esc(d.link) + '" target="_blank" rel="noopener">団のサイトを見る</a>'); }
-      return '<div class="card"><div class="head"><span class="no">' + esc(d.no) + '</span>' +
-        '<span class="name">' + esc(d.name) + '</span></div>' +
-        (lines.length ? '<div class="detail">' + lines.join('<br>') + '</div>' : '') + '</div>';
-    }).join('') + '</div></div>';
-}).join('');
+function render(data){
+  // シートで指定した種目(未知の種目)も末尾に表示する
+  const cats = ORDER.filter(c => data.some(d => d.cat === c))
+    .concat([...new Set(data.map(d => d.cat))].filter(c => c && !ORDER.includes(c)));
+  document.getElementById('out').innerHTML = cats.map(cat => {
+    const items = data.filter(d => d.cat === cat);
+    return '<div class="group"><h2>' + esc(cat) + '<span class="n">' + items.length + '団</span></h2>' +
+      '<div class="cards">' + items.map(d => {
+        const lines = [];
+        if (d.area) { lines.push('活動場所: ' + esc(d.area)); }
+        if (d.time) { lines.push('活動日時: ' + esc(d.time)); }
+        if (d.contact) { lines.push('連絡先: ' + esc(d.contact)); }
+        if (d.desc) { lines.push(esc(d.desc)); }
+        if (d.link) { lines.push('<a href="' + esc(d.link) + '" target="_blank" rel="noopener">団のサイトを見る</a>'); }
+        return '<div class="card"><div class="head"><span class="no">' + esc(d.no) + '</span>' +
+          '<span class="name">' + esc(d.name) + '</span></div>' +
+          (lines.length ? '<div class="detail">' + lines.join('<br>') + '</div>' : '') + '</div>';
+      }).join('') + '</div></div>';
+  }).join('');
+}
+render(DATA);
+
+// ---- 「単位団」シート直読み(資料一覧・お知らせと同じ仕組み)。読めない間は上の焼き込みを表示 ----
+// シート列: 番号|団名|種目|活動場所|活動日時|連絡先|サイトURL|紹介文|非表示
+// 役員はスプレッドシート「本部サイト資料一覧」の「単位団」シートを直すだけで、このページに反映される
+const SHEET_ID = '1SO0QSusrDojFkDraf4MSGbUrFBch8jAM1ygvX_SlDVo';
+function cellText(row, i){
+  const c = row.c ? row.c[i] : null;
+  if(!c) return '';
+  const v = (c.f !== undefined && c.f !== null) ? c.f : c.v;
+  return v == null ? '' : String(v);
+}
+window.onTeams = function(res){
+  try{
+    // シートが無いとき gviz は先頭シートを返すことがあるため、見出しを検査して本物だけ採用する
+    const labels = (res.table.cols || []).map(c => String(c.label || '').trim());
+    if(labels[0] !== '番号' || labels[1] !== '団名'){ return; }
+    const items = (res.table.rows || []).map(r => ({
+      no: cellText(r,0), name: cellText(r,1), cat: cellText(r,2), area: cellText(r,3),
+      time: cellText(r,4), contact: cellText(r,5), link: cellText(r,6), desc: cellText(r,7),
+      hide: cellText(r,8)
+    })).filter(d => d.name && !d.hide.trim());
+    if(items.length){
+      render(items);
+      const p = document.querySelector('.pagehead p');
+      if(p){ p.innerHTML = p.innerHTML.replace(/24団/, items.length + '団'); }
+    }
+  }catch(e){ console.warn('単位団シートの読込に失敗', e); }
+};
+(function(){
+  const s = document.createElement('script');
+  s.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+          '/gviz/tq?tqx=out:json;responseHandler:onTeams&headers=1&sheet=' +
+          encodeURIComponent('単位団');
+  document.head.appendChild(s);
+})();
 
 // ページの最終更新日(公開日時から自動)
 {
