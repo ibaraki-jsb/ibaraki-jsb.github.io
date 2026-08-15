@@ -1,0 +1,61 @@
+/* ============================================================
+   茨木市スポーツ少年団本部 サイト共通スタイル
+   正本: 三役役員共有フォルダA/本部サイト/サイトソース/
+   配色・フォント・ヘッダー・フッターはこのファイルで全ページ統一する
+   ============================================================ */
+
+:root{
+  --red:#b71c1c; --red-hover:#d32f2f; --red-pale:#fbeaea;
+  --ink:#1f2124; --sub:#6b7075; --line:#e3e5e8;
+  --bg:#ffffff; --bg-alt:#f6f7f8; --chip:#f2f3f5; --hover:#faf7f7; --fold:#f7f8f9;
+  --maxw:960px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:"BIZ UDPGothic","BIZ UDGothic","Hiragino Sans","Yu Gothic UI",Meiryo,sans-serif;
+     color:var(--ink);background:var(--bg);line-height:1.75}
+img{max-width:100%;display:block}
+a{color:var(--red)}
+
+/* ---- ヘッダー・ナビ ---- */
+.sitehead{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);
+          backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.sitehead .in{max-width:var(--maxw);margin:0 auto;padding:10px 16px;
+              display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brand{font-weight:700;font-size:1.02rem;color:var(--ink);text-decoration:none;letter-spacing:.02em}
+.brand span{color:var(--red)}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+nav a,nav span{font-size:.82rem;text-decoration:none;color:#444;padding:6px 9px;border-radius:6px;
+               white-space:nowrap}
+nav a:hover{background:var(--red-pale);color:var(--red)}
+nav a.cur{color:var(--red);font-weight:700}
+nav span.soon{color:#b6babe;cursor:default}
+nav span.soon small{font-size:.72em}
+
+/* ---- 共通レイアウト ---- */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 16px}
+section{padding:34px 0}
+section.alt{background:var(--bg-alt)}
+.sec-title{font-size:1.12rem;font-weight:700;color:var(--red);margin-bottom:16px;
+           display:flex;align-items:center;gap:.6em}
+.sec-title::before{content:"";width:6px;height:1.15em;background:var(--red);border-radius:2px}
+
+/* ---- ボタン ---- */
+.btn{display:inline-block;text-align:center;text-decoration:none;background:var(--red);color:#fff;
+     font-weight:700;padding:12px 22px;border-radius:8px;letter-spacing:.04em;transition:.15s}
+.btn:hover{background:var(--red-hover)}
+.btn.ghost{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn.ghost:hover{background:var(--red-pale)}
+
+/* ---- フッター ---- */
+footer{background:#26282b;color:#c7cacd;margin-top:40px}
+footer .in{max-width:var(--maxw);margin:0 auto;padding:26px 16px;font-size:.82rem;line-height:1.9}
+footer a{color:#e8b6b6;text-decoration:none}
+footer .fine{color:#8a8e92;font-size:.76rem;margin-top:.6em}
+
+@media (max-width:560px){
+  .sitehead .in{padding:8px 12px}
+  .brand{font-size:.95rem}
+  nav a,nav span{font-size:.78rem;padding:5px 7px}
+  section{padding:26px 0}
+}

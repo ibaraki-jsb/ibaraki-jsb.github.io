@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>資料ダウンロード | 茨木市スポーツ少年団本部</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<!--
+  資料ダウンロードページ。
+  データの流れ: ページを開くたびに「本部サイト資料一覧」スプレッドシート(資料一覧+手動追加)を直読みする。
+  シート側は Apps Script の時間トリガーで1時間ごとに Drive から自動更新される。
+  → 担当者は Drive にファイルを置くだけ。このHTMLの更新は不要。
+  下の DATA = [...] は、シートが読めなかったときの予備(最終スナップショット)。
+-->
+<style>
+  /* このページは検索バーを画面上部に固定するため、共通ヘッダーの固定を解除する */
+  .sitehead{position:static}
+
+  .pagehead{background:var(--red-pale);border-bottom:1px solid #f0d5d5}
+  .pagehead .wrap{padding:18px 16px}
+  .pagehead h1{font-size:1.25rem;color:var(--red);letter-spacing:.02em}
+  .pagehead p{font-size:.85rem;color:#7a5a5a;margin-top:2px}
+
+  .tools{position:sticky;top:0;background:var(--bg);padding-top:10px;z-index:10;
+         border-bottom:1px solid var(--line);margin-bottom:2px}
+  .search{position:relative;margin-bottom:10px}
+  .search input{width:100%;padding:11px 38px 11px 38px;font-size:1rem;border:1px solid var(--line);
+                border-radius:999px;background:#fff;outline:none;font-family:inherit}
+  .search input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(183,28,28,.10)}
+  .search .icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--sub);font-size:.95rem}
+  .search .clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;
+                 color:var(--sub);font-size:1.1rem;cursor:pointer;padding:4px 8px;display:none}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:10px}
+  .tabs button{border:1px solid var(--line);background:var(--chip);color:var(--ink);
+               padding:6px 13px;border-radius:999px;font-size:.85rem;cursor:pointer;white-space:nowrap;
+               font-family:inherit;transition:.15s}
+  .tabs button:hover{background:#e8e9eb}
+  .tabs button.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
+  .tabs button .n{opacity:.65;font-size:.78em;margin-left:.4em}
+  .tabs button.on .n{opacity:.85}
+
+  .group{margin-top:22px}
+  .group h2{font-size:.95rem;color:var(--red);margin:0 0 6px;font-weight:700;
+            letter-spacing:.02em;display:flex;align-items:baseline;gap:.6em}
+  .group h2 .n{color:var(--sub);font-size:.8em;font-weight:400}
+  .list{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);
+        text-decoration:none;color:inherit;transition:background .12s}
+  .item:hover{background:var(--hover)}
+  .list > .item:last-child, details:last-child .item:last-child{border-bottom:none}
+  .kind{flex:0 0 auto;width:34px;height:34px;border-radius:7px;display:flex;align-items:center;
+        justify-content:center;font-size:.62rem;font-weight:700;color:#fff;letter-spacing:.02em}
+  .k-PDF{background:#d93025} .k-Excel{background:#1e8e3e} .k-Word{background:#1a56b0}
+  .k-PowerPoint{background:#d56b1f} .k-画像{background:#7b52ab} .k-ZIP{background:#5f6368}
+  .k-その他{background:#8a9099} .k-フォーム{background:#673ab7}
+  .body{min-width:0;flex:1}
+  .name{font-size:.94rem;font-weight:600;word-break:break-word;line-height:1.5}
+  .desc{font-size:.8rem;color:var(--sub);margin-top:1px;word-break:break-word}
+  .meta{flex:0 0 auto;text-align:right;font-size:.76rem;color:var(--sub);white-space:nowrap;line-height:1.4}
+  .new{display:inline-block;background:var(--red);color:#fff;font-size:.62rem;font-weight:700;
+       border-radius:3px;padding:1px 5px;margin-left:6px;vertical-align:1px;letter-spacing:.03em}
+
+  details{border-bottom:1px solid var(--line)}
+  details:last-child{border-bottom:none}
+  summary{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;
+          background:var(--fold);list-style:none;user-select:none}
+  summary::-webkit-details-marker{display:none}
+  summary:hover{background:#eef0f2}
+  .tri{flex:0 0 auto;transition:transform .15s;color:var(--sub);font-size:.7rem}
+  details[open] .tri{transform:rotate(90deg)}
+  .fname{font-size:.92rem;font-weight:700}
+  .fcount{color:var(--sub);font-size:.78rem;margin-left:.2em}
+  details .item{padding-left:38px;background:#fff}
+  details .item:hover{background:var(--hover)}
+
+  .empty{padding:40px 10px;text-align:center;color:var(--sub);font-size:.9rem}
+  .stampline{margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line);
+             font-size:.78rem;color:var(--sub);text-align:right}
+
+  @media (max-width:560px){
+    .meta{display:none}
+    .name{font-size:.9rem}
+  }
+</style>
+</head>
+<body>
+
+<header class="sitehead">
+  <div class="in">
+    <a class="brand" href="./">茨木市<span>スポーツ少年団</span>本部</a>
+    <nav>
+      <a href="./">ホーム</a>
+      <a class="cur" href="shiryo.html">資料ダウンロード</a>
+      <span class="soon">報告・申請<small>(準備中)</small></span>
+      <span class="soon">日程・行事<small>(準備中)</small></span>
+      <span class="soon">単位団の紹介<small>(準備中)</small></span>
+    </nav>
+  </div>
+</header>
+
+<div class="pagehead">
+  <div class="wrap">
+    <h1>資料ダウンロード</h1>
+    <p>各行事の資料・様式です。ファイル名をクリックすると開きます。フォルダ(グレーの行)はその場に展開します。</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="tools">
+    <div class="search">
+      <span class="icon">🔍</span>
+      <input id="q" type="search" placeholder="ファイル名で探す(例: 夏季、申込、警備)" autocomplete="off">
+      <button class="clear" id="clear" aria-label="消す">×</button>
+    </div>
+    <div class="tabs" id="tabs"></div>
+  </div>
+
+  <div id="out"></div>
+
+  <div class="stampline" id="stamp"></div>
+</div>
+
+<footer>
+  <div class="in">
+    茨木市スポーツ少年団本部 総務広報委員会<br>
+    お問い合わせ: <a href="mailto:ibaraki.jsb.soumu@gmail.com">ibaraki.jsb.soumu@gmail.com</a>
+    <div class="fine">一覧は本部のDriveから自動生成されています。</div>
+  </div>
+</footer>
+
+<script>
+// c=分類 p=サブフォルダ('' は直下) n=ファイル名 d=説明 k=種類 u=更新日 s=サイズ l=リンク
+// 予備データ: 2026-08-14 スプレッドシート出力(49件)。シートが読めたら置き換わる
+let DATA = [
+ {"c":"本部登録","p":"","n":"aya mail account.png","d":"阿野副本部長への問い合わせQRコード(登録・各種ご相談はこちらへ)","k":"画像","u":"2026/03/09","s":"97 KB","l":"https://drive.google.com/file/d/1FOjSqA5wW7QbJ7CPWMmMfvYN0DqtTDdO/view"},
+ {"c":"本部登録","p":"","n":"本部サイトQRcode.png","d":"","k":"画像","u":"2026/03/09","s":"113 KB","l":"https://drive.google.com/file/d/1mgGW3LjynxIjxL8rFnV1Q5CxrqnWrZqE/view"},
+ {"c":"本部登録","p":"Oldies / R7(2025)","n":"4.本部登録表A&B.xlsx","d":"","k":"Excel","u":"2025/07/19","s":"45 KB","l":"https://drive.google.com/file/d/1cQbgi2sWg4x5fj7pLTHAJfopjEsu0LDP/view"},
+ {"c":"本部登録","p":"Oldies / R7(2025)","n":"登録用紙2025.zip","d":"","k":"ZIP","u":"2025/07/31","s":"707 KB","l":"https://drive.google.com/file/d/1zjTCpxL98X5EARwsdaGv8eu-L04l6NT-/view"},
+ {"c":"本部登録","p":"登録用紙2026","n":"2026年度登録手続きについて.pdf","d":"","k":"PDF","u":"2026/03/09","s":"232 KB","l":"https://drive.google.com/file/d/1XxsV97GCTtRTGhJxH3ZnGtgQJB5LU-8Y/view"},
+ {"c":"本部登録","p":"登録用紙2026","n":"わかば申込書.xlsx","d":"","k":"Excel","u":"2026/03/09","s":"17 KB","l":"https://drive.google.com/file/d/15vwYwmU-DsJBvEAqwApyYbsQ2qi198UB/view"},
+ {"c":"本部登録","p":"登録用紙2026","n":"少年団登録システム_代表メールアドレス変更操作手順.pdf","d":"","k":"PDF","u":"2026/03/05","s":"488 KB","l":"https://drive.google.com/file/d/12KC8ektOCG_4doBWCZVOydpH4VnZvMvy/view"},
+ {"c":"本部登録","p":"登録用紙2026","n":"指導者会員名簿AB_2026改訂版.xlsx","d":"","k":"Excel","u":"2026/03/09","s":"38 KB","l":"https://drive.google.com/file/d/1O5uByCQJzPAyJuA0DL4kZ6croutQETmD/view"},
+ {"c":"本部登録","p":"登録用紙2026","n":"本部登録チェック表_封筒.xlsx","d":"","k":"Excel","u":"2026/03/09","s":"71 KB","l":"https://drive.google.com/file/d/1_69Nxqpsxhf40aove8PyHd5NRIQ6gGAV/view"},
+ {"c":"夏季行事","p":"","n":"夏季行事 実施報告フォーム(オンライン提出はこちら)","d":"書面の代わりにオンラインで報告できます。提出期限: 令和8年10月2日(金)","k":"フォーム","u":"2026/08/14","s":"","l":"https://docs.google.com/forms/d/e/1FAIpQLSf3aInRjQCVHlUAFjyBhXDfmYWGuzt3kATJhsNsNPAD850-fw/viewform"},
+ {"c":"夏季行事","p":"","n":"7.原紙 夏季行事 報告依頼・報告書.pdf","d":"","k":"PDF","u":"2026/07/15","s":"343 KB","l":"https://drive.google.com/file/d/1asd1w7vmzWuTIWYViamYhgvXy4CTgT6F/view"},
+ {"c":"夏季行事","p":"","n":"7.原紙 夏季行事 報告依頼・報告書.xlsx","d":"","k":"Excel","u":"2026/07/29","s":"129 KB","l":"https://drive.google.com/file/d/1-KoF1yhyQL4lvJXjU5oytVPMihF0FhTM/view"},
+ {"c":"グランドフェスティバル","p":"","n":"第52回グランドフェスティバル各団案内.pdf","d":"","k":"PDF","u":"2026/07/13","s":"87 KB","l":"https://drive.google.com/file/d/1W2IdGdTI4X5TS-w7GN_0OSZ7KcWpWqjH/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"20250719 第51回ｸﾞﾗﾝﾄﾞF(アンケート).docx","d":"","k":"Word","u":"2025/09/17","s":"26 KB","l":"https://drive.google.com/file/d/1NIBknUpgGwIEA59AoD3YsoinVCXtZWE7/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"20250719 第51回ｸﾞﾗﾝﾄﾞF①(案内状・各団案内一式).docx","d":"","k":"Word","u":"2025/07/19","s":"42 KB","l":"https://drive.google.com/file/d/1X8PsI33t84NO7FGMVxMfS9cqxbnOvrJx/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"20250809 第51回ｸﾞﾗﾝﾄﾞF(競技グラウンド配置).pdf","d":"","k":"PDF","u":"2025/08/07","s":"129 KB","l":"https://drive.google.com/file/d/1rKgSnarvXYREQf4DkyuJHgdsK6rxtjj9/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"20250809 第51回ｸﾞﾗﾝﾄﾞF(競技種目・役割表).pdf","d":"","k":"PDF","u":"2025/08/06","s":"59 KB","l":"https://drive.google.com/file/d/1A2V7uIrHd0i7KI1zoNZYuUUy142s9hLo/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"20250809 第51回ｸﾞﾗﾝﾄﾞF(臨時出店・調書依頼).pdf","d":"","k":"PDF","u":"2025/08/06","s":"72 KB","l":"https://drive.google.com/file/d/13-uQk8y8OYNE9BEvjZ4ob70_cwSGFO5Z/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"20250809 第51回ｸﾞﾗﾝﾄﾞF(食品衛生案内一式).pdf","d":"","k":"PDF","u":"2025/08/06","s":"82 KB","l":"https://drive.google.com/file/d/1v4qSWnp8MoweVgxOS_Ha4kNKX-J74BXK/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"20250830 第51回ｸﾞﾗﾝﾄﾞF(競技組合せ).pdf","d":"","k":"PDF","u":"2025/08/12","s":"30 KB","l":"https://drive.google.com/file/d/1f6lPAzaNilG0Y6esffQwc7z6hQwr1tun/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"①_第51回_GF開催にあたっての周知事項.pdf","d":"","k":"PDF","u":"2025/08/06","s":"656 KB","l":"https://drive.google.com/file/d/18XRALOAv9uQNjTPEU13r55yFrwwJ5bh1/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"②_第51回_各団実行委員の皆様へ.pdf","d":"","k":"PDF","u":"2025/08/04","s":"434 KB","l":"https://drive.google.com/file/d/1cy2ylfZnf1SVMBTVJ6f4emIqievLikzH/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"③_第51回_地割図面.pdf","d":"","k":"PDF","u":"2025/08/12","s":"49 KB","l":"https://drive.google.com/file/d/1Pqzx5QTozrr8dYIWglRU3hhwbP1ZfwWx/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"④_第51回_警備資料r4.pdf","d":"","k":"PDF","u":"2025/08/10","s":"620 KB","l":"https://drive.google.com/file/d/1NjBJmuBKRKKM5KjkSiL95xp5EXVkLlyS/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"⓪_第51回_GF実施要領.pdf","d":"","k":"PDF","u":"2025/08/10","s":"365 KB","l":"https://drive.google.com/file/d/1CVxMWL0_9CqF1s4DYIbWv76_d3pcYEnw/view"},
+ {"c":"グランドフェスティバル","p":"R7(2025)第一回会議資料","n":"第51回グランドF各団案内.docx","d":"","k":"Word","u":"2025/08/02","s":"42 KB","l":"https://drive.google.com/file/d/1aHyaV5XhzT_VQ_piJsNKlui9_zkTSbK6/view"},
+ {"c":"グランドフェスティバル","p":"R8(2026)第一回会議資料","n":"20260808 第52回ｸﾞﾗﾝﾄﾞF(地割図面).pdf","d":"","k":"PDF","u":"2026/08/08","s":"71 KB","l":"https://drive.google.com/file/d/1oirZQS2cTwlNsQZC1RN39foYE5aTZEad/view"},
+ {"c":"グランドフェスティバル","p":"R8(2026)第一回会議資料","n":"20260808 第52回ｸﾞﾗﾝﾄﾞF(模擬店内容).pdf","d":"","k":"PDF","u":"2026/08/08","s":"33 KB","l":"https://drive.google.com/file/d/1O5rjA-dO3Hp0xPK-BOn-3V2KiSrwxuNm/view"},
+ {"c":"グランドフェスティバル","p":"R8(2026)第一回会議資料","n":"20260808 第52回ｸﾞﾗﾝﾄﾞF(競技種目・役割表).pdf","d":"","k":"PDF","u":"2026/08/08","s":"58 KB","l":"https://drive.google.com/file/d/1dAgSiecbXKN7FoPWiTiZ0_BQy-PsdXjF/view"},
+ {"c":"グランドフェスティバル","p":"R8(2026)第一回会議資料","n":"20260808 第52回ｸﾞﾗﾝﾄﾞF(競技組合せ).pdf","d":"","k":"PDF","u":"2026/08/08","s":"27 KB","l":"https://drive.google.com/file/d/1sQGZdq9F9_w44jmFDM2UiOJ4V3He8iGq/view"},
+ {"c":"グランドフェスティバル","p":"R8(2026)第一回会議資料","n":"20260808 第52回ｸﾞﾗﾝﾄﾞF(臨時出店・調査依頼).pdf","d":"","k":"PDF","u":"2026/08/08","s":"72 KB","l":"https://drive.google.com/file/d/1yadSRA2YuaIv2HitB3zowpS0n7xFHzJK/view"},
+ {"c":"グランドフェスティバル","p":"R8(2026)第一回会議資料","n":"20260808 第52回ｸﾞﾗﾝﾄﾞF(食品衛生案内一式).pdf","d":"","k":"PDF","u":"2026/08/08","s":"82 KB","l":"https://drive.google.com/file/d/157g2x5gb3vtOH2rLxQdDsrMTMLieDgLS/view"},
+ {"c":"グランドフェスティバル","p":"R8(2026)第一回会議資料","n":"①_第52回_GF開催にあたっての周知事項.pdf","d":"","k":"PDF","u":"2026/08/03","s":"134 KB","l":"https://drive.google.com/file/d/1rJPxz3J1H8idZj8ipTWvSuHxAtBhyD9o/view"},
+ {"c":"グランドフェスティバル","p":"R8(2026)第一回会議資料","n":"②_第52回_各団実行委員の皆様へ.pdf","d":"","k":"PDF","u":"2026/08/03","s":"74 KB","l":"https://drive.google.com/file/d/1tsb-OH0OykcQme1LNj6gYMaGdGgV2AIv/view"},
+ {"c":"グランドフェスティバル","p":"R8(2026)第一回会議資料","n":"④_第52回_警備資料.pdf","d":"","k":"PDF","u":"2026/08/04","s":"475 KB","l":"https://drive.google.com/file/d/14GwVBljczqRMWFo-o-cP85-R_9AOy4Bv/view"},
+ {"c":"体力テスト・一斉奉仕活動","p":"","n":"11. 配布 依頼 新体力テスト奉仕活動.xlsx","d":"","k":"Excel","u":"2026/02/07","s":"168 KB","l":"https://drive.google.com/file/d/13oPli9zavvpvlyErB-_ZYOAbU7gVZYEt/view"},
+ {"c":"体力テスト・一斉奉仕活動","p":"","n":"count_program_221216 ibaraki.xlsx","d":"","k":"Excel","u":"2025/11/07","s":"1.0 MB","l":"https://drive.google.com/file/d/1rDfUYuByTxY_w0MzD_XLx2G-h-iAZ9Hy/view"},
+ {"c":"体力テスト・一斉奉仕活動","p":"","n":"付1. 記録用紙（小学生以上版）kiroku_shogakusei.pdf","d":"","k":"PDF","u":"2021/12/13","s":"113 KB","l":"https://drive.google.com/file/d/13RbhXnsrBgLMUHMiRLY1BewTvXsPmTFu/view"},
+ {"c":"母集団研修会","p":"","n":"令和８年度度母集団研修会ご案内.xlsx","d":"","k":"Excel","u":"2026/04/15","s":"13 KB","l":"https://drive.google.com/file/d/1NBhS2QgajpyaHZP4TR1-JoIgrvKVFov9/view"},
+ {"c":"救急救命講習","p":"","n":"2026年度救急救命講習会申込書.doc","d":"","k":"Word","u":"2026/07/01","s":"42 KB","l":"https://drive.google.com/file/d/1EZZy_KN_zJKBagwOyw-j8lxH7zNcHyNF/view"},
+ {"c":"スタートコーチ養成","p":"","n":"令和７年度_スタートコーチ案内・申込書.pdf","d":"","k":"PDF","u":"2025/07/31","s":"2.7 MB","l":"https://drive.google.com/file/d/137WXEQsb7oNvC5zQepisMgPiv3M0PwMK/view"},
+ {"c":"優良指導者表彰","p":"","n":"令和8年度茨木市スポーツ少年団優良指導者推薦.xlsx","d":"","k":"Excel","u":"2026/08/14","s":"17 KB","l":"https://drive.google.com/file/d/1zNU3kZxRwGxPudCFJE_ig67xgVSlVYgK/view"},
+ {"c":"優良指導者表彰","p":"","n":"令和７年度茨木市スポーツ少年団優良指導者推薦.xlsx","d":"","k":"Excel","u":"2025/07/31","s":"15 KB","l":"https://drive.google.com/file/d/1qd5MezJCnv6ZWy-BQwCnw64ODFyvxdA7/view"},
+ {"c":"新年親睦会","p":"","n":"20251108_新年親睦会開催案内(令和７年度）.docx","d":"","k":"Word","u":"2025/10/18","s":"21 KB","l":"https://drive.google.com/file/d/1V0clCSm5DuOFc_NiYzcJwHaMqZXiwyuN/view"},
+ {"c":"お別れイベント","p":"","n":"20251001_6年生卒団記念イベント開催案内案(令和７年）.docx","d":"","k":"Word","u":"2025/10/04","s":"12 KB","l":"https://drive.google.com/file/d/10sihXzLbrzR1M61C74Db4sJ_Y9y8BXFI/view"},
+ {"c":"こども性暴力防止法","p":"","n":"note.txt","d":"","k":"Word","u":"2025/11/15","s":"1 KB","l":"https://drive.google.com/file/d/1OOZgKfPv0tlHqu--NSRzPaNeU0KsX6qu/view"},
+ {"c":"こども性暴力防止法","p":"","n":"【別添１】制度概要リーフレット・動画.pdf","d":"","k":"PDF","u":"2025/11/15","s":"873 KB","l":"https://drive.google.com/file/d/1owH42D9hCzF4juPYnf9wpToD9JNmHFPS/view"},
+ {"c":"こども性暴力防止法","p":"","n":"【別添２】事業者向け資料.pdf","d":"","k":"PDF","u":"2025/11/15","s":"1.1 MB","l":"https://drive.google.com/file/d/1l3QH6le7aZzkJODbvx58tFMhPf5IdsQv/view"},
+ {"c":"こども性暴力防止法","p":"","n":"【別添３】従事者向けリーフレット.pdf","d":"","k":"PDF","u":"2025/11/15","s":"424 KB","l":"https://drive.google.com/file/d/1qqDpaHYUpY6XpVM_aHBWPhN0JzdfWv7u/view"}
+];
+
+const ORDER = ['本部登録','夏季行事','グランドフェスティバル','体力テスト・一斉奉仕活動','母集団研修会',
+               '救急救命講習','スタートコーチ養成','優良指導者表彰','新年親睦会','お別れイベント','こども性暴力防止法'];
+const NEW_DAYS = 60;
+
+function computeCategories(){
+  return ORDER.filter(c => DATA.some(d => d.c === c))
+    .concat([...new Set(DATA.map(d => d.c))].filter(c => !ORDER.includes(c)));
+}
+let categories = computeCategories();
+
+let filter = '*';
+const qInput = document.getElementById('q');
+const clearBtn = document.getElementById('clear');
+
+function toDate(s){ const p = String(s||'').split('/'); return p.length===3 ? new Date(+p[0],+p[1]-1,+p[2]) : null; }
+function isNew(s){ const d = toDate(s); if(!d) return false;
+  return (Date.now() - d.getTime()) / 86400000 <= NEW_DAYS; }
+function esc(s){ return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function buildTabs(){
+  const tabs = document.getElementById('tabs');
+  const all = [{key:'*', label:'すべて', n:DATA.length}]
+    .concat(categories.map(c => ({key:c, label:c, n:DATA.filter(d=>d.c===c).length})));
+  tabs.innerHTML = all.map(t =>
+    `<button data-key="${esc(t.key)}"${t.key===filter?' class="on"':''}>${esc(t.label)}<span class="n">${t.n}</span></button>`
+  ).join('');
+  tabs.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.key;
+    buildTabs(); render();
+  }));
+}
+
+function itemHtml(d, showPath){
+  const badge = d.k === 'PowerPoint' ? 'PPT' : d.k === 'その他' ? 'FILE' : d.k === 'フォーム' ? 'FORM' : d.k;
+  const path = showPath ? esc(d.c) + (d.p ? ' &gt; ' + esc(d.p) : '') : '';
+  return `
+    <a class="item" href="${esc(d.l)}" target="_blank" rel="noopener">
+      <span class="kind k-${esc(d.k)}">${esc(badge)}</span>
+      <span class="body">
+        <span class="name">${esc(d.n)}${isNew(d.u) ? '<span class="new">NEW</span>' : ''}</span>
+        ${d.d || path ? `<span class="desc">${[path, esc(d.d)].filter(Boolean).join(' — ')}</span>` : ''}
+      </span>
+      <span class="meta">${esc(d.u)}${d.s ? '<br>' + esc(d.s) : ''}</span>
+    </a>`;
+}
+
+function render(){
+  const q = qInput.value.trim().toLowerCase();
+  clearBtn.style.display = q ? 'block' : 'none';
+  const hit = DATA.filter(d =>
+    (filter === '*' || d.c === filter) &&
+    (!q || (d.n + ' ' + (d.d||'') + ' ' + d.c + ' ' + (d.p||'')).toLowerCase().includes(q)));
+
+  const out = document.getElementById('out');
+  if (!hit.length){
+    out.innerHTML = '<div class="empty">該当する資料がありません。<br>検索語を変えるか、「すべて」を選んでください。</div>';
+    return;
+  }
+
+  if (q){
+    out.innerHTML = `
+      <div class="group">
+        <h2>検索結果<span class="n">${hit.length}件</span></h2>
+        <div class="list">${hit.map(d => itemHtml(d, true)).join('')}</div>
+      </div>`;
+    return;
+  }
+
+  out.innerHTML = categories.filter(c => hit.some(d => d.c === c)).map(c => {
+    const items = hit.filter(d => d.c === c);
+    const direct = items.filter(d => !d.p);
+    const paths = [...new Set(items.filter(d => d.p).map(d => d.p))];
+    const folders = paths.map(p => {
+      const inFolder = items.filter(d => d.p === p);
+      const hasNew = inFolder.some(d => isNew(d.u));
+      return `
+        <details>
+          <summary><span class="tri">▶</span><span class="fname">📁 ${esc(p)}</span>
+            <span class="fcount">${inFolder.length}件</span>${hasNew ? '<span class="new">NEW</span>' : ''}</summary>
+          ${inFolder.map(d => itemHtml(d, false)).join('')}
+        </details>`;
+    });
+    return `
+      <div class="group">
+        <h2>${esc(c)}<span class="n">${items.length}件</span></h2>
+        <div class="list">${direct.map(d => itemHtml(d, false)).join('')}${folders.join('')}</div>
+      </div>`;
+  }).join('');
+}
+
+qInput.addEventListener('input', render);
+clearBtn.addEventListener('click', () => { qInput.value = ''; render(); qInput.focus(); });
+document.getElementById('stamp').textContent = '掲載資料 ' + DATA.length + ' 件';
+buildTabs(); render();
+
+// ---- シート直読み。成功したら最新データに差し替える。失敗時は焼き込みデータのまま動く ----
+const SHEET_ID = '1SO0QSusrDojFkDraf4MSGbUrFBch8jAM1ygvX_SlDVo';
+let liveMain = null, liveManual = null;
+
+function gviz(sheetName, handler){
+  const s = document.createElement('script');
+  s.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+          '/gviz/tq?tqx=out:json;responseHandler:' + handler +
+          '&headers=1&sheet=' + encodeURIComponent(sheetName);
+  s.onerror = function(){ console.warn('シート読込失敗: ' + sheetName); };
+  document.head.appendChild(s);
+}
+function cellText(row, i){
+  const c = row.c ? row.c[i] : null;
+  if(!c) return '';
+  const v = (c.f !== undefined && c.f !== null) ? c.f : c.v;
+  return v == null ? '' : String(v);
+}
+window.onSheetMain = function(res){ liveMain = res; tryApplyLive(); };
+window.onSheetManual = function(res){ liveManual = res; tryApplyLive(); };
+
+function tryApplyLive(){
+  if(!liveMain || !liveManual) return;
+  try{
+    const drive = (liveMain.table.rows || []).map(r => ({
+      c: cellText(r,0), p: cellText(r,1), n: cellText(r,2), d: cellText(r,3),
+      k: cellText(r,4), u: cellText(r,5), s: cellText(r,6), l: cellText(r,7),
+      hide: cellText(r,9)
+    })).filter(d => d.c && d.n && d.l && !d.hide.trim());
+    const manual = (liveManual.table.rows || []).map(r => ({
+      c: cellText(r,0), p: '', n: cellText(r,1) || cellText(r,3), d: cellText(r,2),
+      k: cellText(r,4) || 'フォーム', u: cellText(r,5), s: '', l: cellText(r,3),
+      hide: cellText(r,6)
+    })).filter(d => d.c && d.l && !d.hide.trim());
+
+    if(drive.length + manual.length === 0) return;
+    DATA = manual.concat(drive);
+    const idx = {};
+    ORDER.forEach((c,i) => idx[c] = i);
+    DATA.sort((a,b) => (idx[a.c] !== undefined ? idx[a.c] : 999) - (idx[b.c] !== undefined ? idx[b.c] : 999));
+    categories = computeCategories();
+    document.getElementById('stamp').textContent = '掲載資料 ' + DATA.length + ' 件(自動更新)';
+    buildTabs(); render();
+  }catch(e){ console.warn('シートデータの解釈に失敗', e); }
+}
+gviz('資料一覧', 'onSheetMain');
+gviz('手動追加', 'onSheetManual');
+</script>
+</body>
+</html>

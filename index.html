@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>茨木市スポーツ少年団本部</title>
+<meta name="description" content="大阪府茨木市内で活動するスポーツ少年団の連絡・資料・報告の窓口です。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<!--
+  ホームページ。お知らせは「本部サイト資料一覧」スプレッドシートの「お知らせ」シートを直読みする。
+  シートが無い/読めない間は、下の FALLBACK_NOTICES を表示する。
+-->
+<style>
+  /* ヒーロー */
+  .hero{position:relative;max-height:520px;overflow:hidden;line-height:0}
+  .hero img{width:100%;height:auto;object-fit:cover;max-height:520px}
+  .hero .cap{position:absolute;left:0;right:0;bottom:0;line-height:1.4;color:#fff;
+             padding:60px 0 22px;
+             background:linear-gradient(transparent, rgba(0,0,0,.28) 30%, rgba(0,0,0,.74))}
+  .hero .cap .wrap{padding:0 16px}
+  .hero .bar{width:56px;height:5px;background:#e53935;border-radius:2px;margin-bottom:10px}
+  .hero h1{font-size:clamp(1.3rem, 3.6vw, 2.3rem);font-weight:700;letter-spacing:.03em;
+           text-shadow:0 2px 14px rgba(0,0,0,.7)}
+  .hero .sub{margin-top:5px;font-size:clamp(.78rem, 1.7vw, 1rem);opacity:.95;
+             text-shadow:0 1px 8px rgba(0,0,0,.8)}
+
+  /* 入口ボタン */
+  .gateway{display:flex;gap:12px;flex-wrap:wrap;padding:18px 0 0}
+  .gateway .btn{flex:1 1 180px}
+  @media (max-width:560px){
+    .gateway{gap:8px}
+    .gateway .btn{flex:1 1 calc(50% - 4px);padding:11px 8px;font-size:.88rem}
+    .gateway .btn.ghost{flex:1 1 100%}
+  }
+
+  /* お知らせ */
+  .notice{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .notice .row{display:flex;gap:14px;padding:13px 16px;border-bottom:1px solid var(--line);
+               font-size:.92rem;align-items:baseline;text-decoration:none;color:inherit}
+  .notice .row:last-child{border-bottom:none}
+  .notice a.row:hover{background:var(--hover)}
+  .notice .d{color:var(--sub);font-size:.8rem;white-space:nowrap}
+  .notice .new{display:inline-block;background:var(--red);color:#fff;font-size:.62rem;font-weight:700;
+               border-radius:3px;padding:1px 5px;margin-left:8px;vertical-align:1px}
+
+  .aisatsu{font-size:.94rem;max-width:44em}
+  .aisatsu .name{text-align:right;margin-top:1em;font-weight:700}
+</style>
+</head>
+<body>
+
+<header class="sitehead">
+  <div class="in">
+    <a class="brand" href="./">茨木市<span>スポーツ少年団</span>本部</a>
+    <nav>
+      <a class="cur" href="./">ホーム</a>
+      <a href="shiryo.html">資料ダウンロード</a>
+      <span class="soon">報告・申請<small>(準備中)</small></span>
+      <span class="soon">日程・行事<small>(準備中)</small></span>
+      <span class="soon">単位団の紹介<small>(準備中)</small></span>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <img src="https://lh3.googleusercontent.com/d/1akVJfn51timiSOVr9-BJmA3i7VteGHjh=w1600"
+       alt="グランドフェスティバルのリレー競走">
+  <div class="cap">
+    <div class="wrap">
+      <div class="bar"></div>
+      <h1>茨木市スポーツ少年団本部</h1>
+      <p class="sub">大阪府茨木市内で活動するスポーツ少年団の連絡・資料・報告の窓口です</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="gateway">
+    <a class="btn" href="shiryo.html">資料ダウンロード</a>
+    <a class="btn" href="https://docs.google.com/forms/d/e/1FAIpQLSf3aInRjQCVHlUAFjyBhXDfmYWGuzt3kATJhsNsNPAD850-fw/viewform"
+       target="_blank" rel="noopener">夏季行事 報告フォーム</a>
+    <a class="btn ghost" href="https://docs.google.com/spreadsheets/d/1I8JaQcvmhJaMDXEQGsPqmfkdnBRhz2NL46G-M4f5jQQ/edit?gid=1704493820"
+       target="_blank" rel="noopener">GF 旗手・選手宣誓 名簿</a>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-title">お知らせ</h2>
+    <div class="notice" id="notice"></div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2 class="sec-title">本部長挨拶</h2>
+    <div class="aisatsu">
+      <p id="aisatsu-body">(ここに本部長挨拶の文章が入ります。旧サイトの文面をご支給ください。)</p>
+      <p class="name">茨木市スポーツ少年団本部 本部長　片桐 仁</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="in">
+    茨木市スポーツ少年団本部 総務広報委員会<br>
+    お問い合わせ: <a href="mailto:ibaraki.jsb.soumu@gmail.com">ibaraki.jsb.soumu@gmail.com</a>
+    <div class="fine">このサイトの資料は本部が随時更新しています。</div>
+  </div>
+</footer>
+
+<script>
+// ---- お知らせ: シート直読み(gviz)。読めない間は下の予備を表示 ----
+const SHEET_ID = '1SO0QSusrDojFkDraf4MSGbUrFBch8jAM1ygvX_SlDVo';
+const NEW_DAYS = 14;   // お知らせのNEWは2週間
+const FALLBACK_NOTICES = [
+  {d:'2026/08/14', t:'令和8年度 夏季行事の実施報告はフォームからご提出ください(期限: 10月2日)',
+   l:'https://docs.google.com/forms/d/e/1FAIpQLSf3aInRjQCVHlUAFjyBhXDfmYWGuzt3kATJhsNsNPAD850-fw/viewform'},
+  {d:'2026/08/14', t:'第52回グランドフェスティバル(9/27開催) 開会式担当の名簿記入を各部会にお願いしています(期限: 9/16)',
+   l:'https://docs.google.com/spreadsheets/d/1I8JaQcvmhJaMDXEQGsPqmfkdnBRhz2NL46G-M4f5jQQ/edit?gid=1704493820'},
+];
+
+function isNew(s){
+  const p = String(s||'').split('/');
+  if(p.length !== 3) return false;
+  return (Date.now() - new Date(+p[0],+p[1]-1,+p[2]).getTime()) / 86400000 <= NEW_DAYS;
+}
+function esc(s){ return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function renderNotices(items){
+  const box = document.getElementById('notice');
+  if(!items.length){
+    box.innerHTML = '<div class="row"><span>現在お知らせはありません。</span></div>';
+    return;
+  }
+  box.innerHTML = items.map(n => {
+    const body = '<span class="d">' + esc(n.d) + '</span><span>' + esc(n.t) +
+                 (isNew(n.d) ? '<span class="new">NEW</span>' : '') + '</span>';
+    return n.l ? '<a class="row" target="_blank" rel="noopener" href="' + esc(n.l) + '">' + body + '</a>'
+               : '<div class="row">' + body + '</div>';
+  }).join('');
+}
+renderNotices(FALLBACK_NOTICES);
+
+// 「お知らせ」シート(列: 日付|内容|リンク|非表示)があれば差し替える
+function cellText(row, i){
+  const c = row.c ? row.c[i] : null;
+  if(!c) return '';
+  const v = (c.f !== undefined && c.f !== null) ? c.f : c.v;
+  return v == null ? '' : String(v);
+}
+window.onNotices = function(res){
+  try{
+    const items = (res.table.rows || []).map(r => ({
+      d: cellText(r,0), t: cellText(r,1), l: cellText(r,2), hide: cellText(r,3)
+    })).filter(n => n.t && !n.hide.trim());
+    if(items.length){ renderNotices(items.reverse()); }  // 新しい行を上に
+  }catch(e){ console.warn('お知らせの読込に失敗', e); }
+};
+(function(){
+  const s = document.createElement('script');
+  s.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+          '/gviz/tq?tqx=out:json;responseHandler:onNotices&headers=1&sheet=' +
+          encodeURIComponent('お知らせ');
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
