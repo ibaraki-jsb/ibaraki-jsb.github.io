@@ -124,7 +124,21 @@ function render(data){
         if (d.time) { lines.push('活動日時: ' + esc(d.time)); }
         if (d.contact) { lines.push('連絡先: ' + esc(d.contact)); }
         if (d.desc) { lines.push(esc(d.desc)); }
-        if (d.link) { lines.push('<a href="' + esc(d.link) + '" target="_blank" rel="noopener">団のサイトを見る</a>'); }
+        const links = [];
+        if (d.link) { links.push(['サイト', d.link]); }
+        if (d.insta) { links.push(['Instagram', d.insta]); }
+        if (d.x) { links.push(['X', d.x]); }
+        if (d.other) {
+          // ラベルはURLから自動判定
+          const label = /facebook\.com/.test(d.other) ? 'Facebook'
+            : /threads\./.test(d.other) ? 'Threads' : 'リンク';
+          links.push([label, d.other]);
+        }
+        if (links.length) {
+          lines.push(links.map(l =>
+            '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + '</a>'
+          ).join(' / '));
+        }
         return '<div class="card"><div class="head"><span class="no">' + esc(d.no) + '</span>' +
           '<span class="name">' + esc(d.name) + '</span></div>' +
           (lines.length ? '<div class="detail">' + lines.join('<br>') + '</div>' : '') + '</div>';
@@ -134,7 +148,7 @@ function render(data){
 render(DATA);
 
 // ---- 「単位団」シート直読み(資料一覧・お知らせと同じ仕組み)。読めない間は上の焼き込みを表示 ----
-// シート列: 番号|団名|種目|活動場所|活動日時|連絡先|サイトURL|紹介文|非表示
+// シート列: 番号|団名|種目|活動場所|活動日時|連絡先|サイト|Instagram|X|その他リンク|紹介文|非表示
 // 役員はスプレッドシート「本部サイト資料一覧」の「単位団」シートを直すだけで、このページに反映される
 const SHEET_ID = '1SO0QSusrDojFkDraf4MSGbUrFBch8jAM1ygvX_SlDVo';
 function cellText(row, i){
@@ -151,8 +165,8 @@ window.onTeams = function(res){
     const items = (res.table.rows || []).map(r => ({
       // シート上は数値になり先頭ゼロが落ちるため、3桁に揃える
       no: cellText(r,0).replace(/^(\d{1,2})$/, m => m.padStart(3,'0')), name: cellText(r,1), cat: cellText(r,2), area: cellText(r,3),
-      time: cellText(r,4), contact: cellText(r,5), link: cellText(r,6), desc: cellText(r,7),
-      hide: cellText(r,8)
+      time: cellText(r,4), contact: cellText(r,5), link: cellText(r,6), insta: cellText(r,7),
+      x: cellText(r,8), other: cellText(r,9), desc: cellText(r,10), hide: cellText(r,11)
     })).filter(d => d.name && !d.hide.trim());
     if(items.length){
       render(items);
