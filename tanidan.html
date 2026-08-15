@@ -149,7 +149,8 @@ window.onTeams = function(res){
     const labels = (res.table.cols || []).map(c => String(c.label || '').trim());
     if(labels[0] !== '番号' || labels[1] !== '団名'){ return; }
     const items = (res.table.rows || []).map(r => ({
-      no: cellText(r,0), name: cellText(r,1), cat: cellText(r,2), area: cellText(r,3),
+      // シート上は数値になり先頭ゼロが落ちるため、3桁に揃える
+      no: cellText(r,0).replace(/^(\d{1,2})$/, m => m.padStart(3,'0')), name: cellText(r,1), cat: cellText(r,2), area: cellText(r,3),
       time: cellText(r,4), contact: cellText(r,5), link: cellText(r,6), desc: cellText(r,7),
       hide: cellText(r,8)
     })).filter(d => d.name && !d.hide.trim());
