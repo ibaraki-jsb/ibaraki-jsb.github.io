@@ -119,10 +119,14 @@ const DATA = [
   {no:'009', name:'茨木体操', cat:'体操', area:'', link:'', contact:''},
   {no:'001', name:'ストーム・アット・ウィンブルドン', cat:'テニス', area:'', link:'', contact:''},
 ];
-// 競技の並びはリロードごとにローテーションし、特定競技が常に先頭にならないようにする
+// 競技の並びは「競技別」に切り替えるたびにローテーションし、特定競技が常に先頭にならないようにする
 const BASE_ORDER = ['剣道','テニス','少林寺拳法','野球','バレーボール','サッカー','体操'];
-const rot = Math.floor(Math.random() * BASE_ORDER.length);
-const ORDER = BASE_ORDER.slice(rot).concat(BASE_ORDER.slice(0, rot));
+let ORDER = BASE_ORDER;
+function rotateOrder(){
+  const rot = Math.floor(Math.random() * BASE_ORDER.length);
+  ORDER = BASE_ORDER.slice(rot).concat(BASE_ORDER.slice(0, rot));
+}
+rotateOrder();
 let sortMode = 'no';   // 'no'=登録番号順(基本) / 'cat'=競技別
 let catFilter = '*';   // 競技別のときの絞り込み(*=ALL)
 let lastData = DATA;
@@ -197,7 +201,11 @@ function buildCatFilter(data){
   }));
 }
 document.querySelectorAll('#sort-toggle button').forEach(b => {
-  b.addEventListener('click', () => { sortMode = b.dataset.mode; catFilter = '*'; render(lastData); });
+  b.addEventListener('click', () => {
+    sortMode = b.dataset.mode; catFilter = '*';
+    if (sortMode === 'cat') { rotateOrder(); }   // 競技別に入るたびに並びを変える
+    render(lastData);
+  });
 });
 render(DATA);
 
