@@ -6,6 +6,7 @@
 
 :root{
   --red:#b71c1c; --red-hover:#d32f2f; --red-pale:#fbeaea;
+  --wakaba:#47cc4c; --wakaba-hover:#d37f2f; --wakaba-pale:#fbeaea;
   --ink:#1f2124; --sub:#6b7075; --line:#e3e5e8;
   --bg:#ffffff; --bg-alt:#f6f7f8; --chip:#f2f3f5; --hover:#faf7f7; --fold:#f7f8f9;
   --maxw:960px;
@@ -43,7 +44,7 @@ section.alt{background:var(--bg-alt)}
 .sec-title::before{content:"";width:6px;height:1.15em;background:var(--red);border-radius:2px}
 
 /* ---- ボタン ---- */
-.btn{display:inline-block;text-align:center;text-decoration:none;background:var(--red);color:#fff;
+.btn{display:inline-block;text-align:center;text-decoration:none;background:var(--wakaba);color:#fff;
      font-weight:700;padding:12px 22px;border-radius:8px;letter-spacing:.04em;transition:.15s}
 .btn:hover{background:var(--red-hover)}
 .btn.ghost{background:#fff;color:var(--red);border:1.5px solid var(--red)}

@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 <!--
   ホームページ。お知らせは「本部サイト資料一覧」スプレッドシートの「お知らせ」シートを直読みする。
   シートが無い/読めない間は、下の FALLBACK_NOTICES を表示する。
@@ -90,7 +90,7 @@
     <div class="wrap">
       <div class="bar"></div>
       <h1>茨木市スポーツ少年団本部</h1>
-      <p class="sub">大阪府茨木市内で活動するスポーツ少年団の連絡・資料・報告の窓口です</p>
+      <p class="sub">大阪府茨木市内で活動するスポーツ少年団の連絡・資料</p>
     </div>
   </div>
 </div>
@@ -145,7 +145,7 @@
 const SHEET_ID = '1SO0QSusrDojFkDraf4MSGbUrFBch8jAM1ygvX_SlDVo';
 const NEW_DAYS = 14;   // お知らせのNEWは2週間
 const FALLBACK_NOTICES = [
-  {d:'2026/08/14', t:'令和8年度 夏季行事の実施報告はフォームからご提出ください',
+  {d:'2026/08/14', t:'令和8年度 夏季行事の実施報告は，メールまたは，このフォームからご提出ください',
    l:'shiryo.html?cat=夏季行事'},
 ];
 
@@ -159,7 +159,7 @@ function esc(s){ return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':
 function renderNotices(items){
   const box = document.getElementById('notice');
   if(!items.length){
-    box.innerHTML = '<div class="row"><span>現在お知らせはありません。</span></div>';
+    box.innerHTML = '<div class="row"><span>現在お知らせはありません。(・◇・) ( ﾟ∋ﾟ)	⊂(・e・)⊃</span></div>';
     return;
   }
   box.innerHTML = items.map(n => {
