@@ -1,15 +1,17 @@
 /* ============================================================
    茨木市スポーツ少年団本部 サイト共通スタイル
    正本: 三役役員共有フォルダA/本部サイト/サイトソース/
-   配色・フォント・ヘッダー・フッターはこのファイルで全ページ統一する
+   配色・フォント・ヘッダー・フッター・「触感言語」をこのファイルで全ページ統一する
+   触感言語 = 押下カーブ(--press)・波紋(.ripple)・ナビ下線伸長・focusリング・初回rise
    ============================================================ */
 
 :root{
   --red:#b71c1c; --red-hover:#d32f2f; --red-pale:#fbeaea;
-  --wakaba:#47cc4c; --wakaba-hover:#d37f2f; --wakaba-pale:#fbeaea;
+  --wakaba:#2e9e46; --wakaba-deep:#1e7a35; --wakaba-soft:#e8f4ea; --wakaba-hover:#268a3c;
   --ink:#1f2124; --sub:#6b7075; --line:#e3e5e8;
   --bg:#ffffff; --bg-alt:#f6f7f8; --chip:#f2f3f5; --hover:#faf7f7; --fold:#f7f8f9;
   --maxw:960px;
+  --press:cubic-bezier(.2,.9,.3,1.4);   /* 押し込み・弾みの共通カーブ */
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -17,6 +19,7 @@ body{font-family:"BIZ UDPGothic","BIZ UDGothic","Hiragino Sans","Yu Gothic UI",M
      color:var(--ink);background:var(--bg);line-height:1.75}
 img{max-width:100%;display:block}
 a{color:var(--red)}
+:focus-visible{outline:3px solid #7ec08a;outline-offset:2px;border-radius:6px}
 
 /* ---- ヘッダー・ナビ ---- */
 .sitehead{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);
@@ -26,12 +29,17 @@ a{color:var(--red)}
 .brand{font-weight:700;font-size:1.02rem;color:var(--ink);text-decoration:none;letter-spacing:.02em;
        display:inline-flex;align-items:center;gap:.45em}
 .brand span{color:var(--red)}
-.brand img{height:1.35em;width:auto}
+.brand img{height:1.35em;width:auto;transition:transform .35s var(--press)}
+.brand:hover img{transform:rotate(-8deg) scale(1.12)}
 nav{display:flex;gap:2px;flex-wrap:wrap}
-nav a,nav span{font-size:.82rem;text-decoration:none;color:#444;padding:6px 9px;border-radius:6px;
-               white-space:nowrap}
-nav a:hover{background:var(--red-pale);color:var(--red)}
+nav a,nav span{font-size:.82rem;text-decoration:none;color:#444;padding:6px 9px;
+               white-space:nowrap;position:relative}
+nav a::after{content:"";position:absolute;left:9px;right:9px;bottom:2px;height:2px;background:var(--wakaba);
+             transform:scaleX(0);transform-origin:center;transition:transform .22s ease}
+nav a:hover{color:var(--wakaba-deep)}
+nav a:hover::after{transform:scaleX(1)}
 nav a.cur{color:var(--red);font-weight:700}
+nav a.cur::after{background:var(--red);transform:scaleX(1)}
 nav span.soon{color:#b6babe;cursor:default}
 nav span.soon small{font-size:.72em}
 
@@ -45,10 +53,25 @@ section.alt{background:var(--bg-alt)}
 
 /* ---- ボタン ---- */
 .btn{display:inline-block;text-align:center;text-decoration:none;background:var(--wakaba);color:#fff;
-     font-weight:700;padding:12px 22px;border-radius:8px;letter-spacing:.04em;transition:.15s}
-.btn:hover{background:var(--red-hover)}
+     font-weight:700;padding:12px 22px;border-radius:8px;letter-spacing:.04em;
+     transition:transform .2s var(--press),background .18s,box-shadow .2s}
+.btn:hover{background:var(--wakaba-hover);transform:translateY(-2px);box-shadow:0 6px 16px rgba(30,110,50,.22)}
+.btn:active{transform:translateY(0) scale(.97);transition-duration:.06s}
 .btn.ghost{background:#fff;color:var(--red);border:1.5px solid var(--red)}
-.btn.ghost:hover{background:var(--red-pale)}
+.btn.ghost:hover{background:var(--red-pale);box-shadow:0 6px 16px rgba(150,30,30,.14)}
+
+/* ---- 触感言語(共通) ---- */
+/* 波紋: JSが .ripple を差し込む。位置指定つき relative 前提 */
+.ripple{position:absolute;border-radius:50%;background:rgba(46,158,70,.18);transform:scale(0);
+        animation:rip .55s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(3.2);opacity:0}}
+/* 初回ロードのふわり(要 .rise 付与。JSで順にdelayを振る) */
+.rise{animation:rise .5s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* OSの「動きを減らす」設定では全モーション停止 */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
 
 /* ---- フッター ---- */
 footer{background:#26282b;color:#c7cacd;margin-top:40px}

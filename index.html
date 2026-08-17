@@ -13,7 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
+<script src="site.js?v=4" defer></script>
 <!--
   ホームページ。お知らせは「本部サイト資料一覧」スプレッドシートの「お知らせ」シートを直読みする。
   シートが無い/読めない間は、下の FALLBACK_NOTICES を表示する。
@@ -44,15 +45,44 @@
   .hero .sub{margin-top:5px;font-size:clamp(.78rem, 1.7vw, 1rem);opacity:.95;
              text-shadow:0 1px 8px rgba(0,0,0,.8)}
 
-  /* 入口ボタン */
-  .gateway{display:flex;gap:12px;flex-wrap:wrap;padding:18px 0 0}
-  .gateway .btn{flex:1 1 180px}
-  .btn.disabled{background:#e9eaec;color:#9aa0a5;cursor:default}
-  @media (max-width:560px){
-    .gateway{gap:8px}
-    .gateway .btn{flex:1 1 calc(50% - 4px);padding:11px 8px;font-size:.88rem}
-    .gateway .btn.ghost{flex:1 1 100%}
-  }
+  /* 入口カード: 静かな見た目・触ると生きる(若葉ライン伸長+浮上+→出現+押し込み) */
+  .gateway{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 0 0}
+  .gw{position:relative;display:block;text-decoration:none;color:var(--ink);background:#fff;
+      border:1px solid var(--line);border-radius:10px;padding:14px;overflow:hidden;
+      transition:transform .22s var(--press),box-shadow .22s ease,border-color .22s ease}
+  .gw::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--wakaba);
+      transform:scaleX(.22);transform-origin:left;transition:transform .3s var(--press)}
+  .gw .t{font-weight:700;font-size:.95rem;color:var(--wakaba-deep);display:flex;align-items:center;gap:.3em}
+  .gw .t::after{content:"→";font-weight:400;opacity:0;transform:translateX(-6px);
+      transition:opacity .2s ease,transform .25s var(--press)}
+  .gw .desc{font-size:.75rem;color:var(--sub);margin-top:3px;line-height:1.55}
+  a.gw:hover{transform:translateY(-3px);border-color:#bfe0c5;box-shadow:0 8px 22px rgba(30,110,50,.13)}
+  a.gw:hover::before{transform:scaleX(1)}
+  a.gw:hover .t::after{opacity:1;transform:translateX(0)}
+  a.gw:active{transform:translateY(0) scale(.975);transition-duration:.06s;box-shadow:0 2px 6px rgba(30,110,50,.14)}
+  .gw.disabled{background:var(--bg-alt)}
+  .gw.disabled::before{background:#d3d7da}
+  .gw.disabled .t{color:#9aa0a5}
+  .gw.disabled .t::after{content:""}
+  @media (max-width:680px){.gateway{grid-template-columns:1fr 1fr;gap:9px}}
+
+  /* 受付中の手続き: バー・カウントダウンなしの事務連絡。行は指に応える */
+  .sec-title.green{color:var(--wakaba-deep)}
+  .sec-title.green::before{background:var(--wakaba)}
+  .duty{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .duty .row{position:relative;display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);
+      font-size:.9rem;align-items:baseline;text-decoration:none;color:inherit;
+      transition:background .18s ease,padding-left .22s var(--press)}
+  .duty .row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:0;background:var(--wakaba);
+      transition:width .22s var(--press)}
+  .duty a.row:hover{background:#f7fbf7;padding-left:22px}
+  .duty a.row:hover::before{width:4px}
+  .duty a.row:active{background:var(--wakaba-soft)}
+  .duty .row:last-child{border-bottom:none}
+  .duty .st{flex:0 0 auto;font-size:.7rem;font-weight:700;border-radius:4px;padding:2px 8px;
+      background:var(--wakaba-soft);color:var(--wakaba-deep)}
+  .duty .st.end{background:var(--chip);color:var(--sub)}
+  .duty .til{margin-left:auto;font-size:.78rem;color:var(--sub);white-space:nowrap}
 
   /* お知らせ */
   .notice{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
@@ -98,13 +128,32 @@
 <div class="wrap">
   <!-- 報告フォーム・GF名簿へのリンクは、アクセス者を限定するため公開トップには置かない
        (報告・申請サブページに集約する方針。2026-08-15) -->
-  <div class="gateway">
-    <a class="btn" href="shiryo.html">資料ダウンロード</a>
-    <span class="btn disabled">報告・申請(準備中)</span>
-    <span class="btn disabled">日程・行事(準備中)</span>
-    <a class="btn" href="tanidan.html">単位団の紹介</a>
-  </div>
+  <nav class="gateway rise-group">
+    <a class="gw" href="shiryo.html" data-ripple>
+      <div class="t">資料ダウンロード</div>
+      <div class="desc">本部からの配布資料・様式を分類別に掲載</div>
+    </a>
+    <span class="gw disabled">
+      <div class="t">報告・申請</div>
+      <div class="desc">各種報告・申込の窓口(準備中)</div>
+    </span>
+    <span class="gw disabled">
+      <div class="t">日程・行事</div>
+      <div class="desc">年間行事と直近の予定(準備中)</div>
+    </span>
+    <a class="gw" href="tanidan.html" data-ripple>
+      <div class="t">単位団の紹介</div>
+      <div class="desc">市内24団の一覧・体験入団のご案内</div>
+    </a>
+  </nav>
 </div>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-title green">受付中の手続き</h2>
+    <div class="duty" id="duty"></div>
+  </div>
+</section>
 
 <section>
   <div class="wrap">
@@ -170,6 +219,53 @@ function renderNotices(items){
   }).join('');
 }
 renderNotices(FALLBACK_NOTICES);
+
+// ---- 受付中の手続き: 「手続き」シート(列: 項目|対象|締切日|リンク|備考|非表示)駆動 ----
+// シートが無い間は下の予備を表示。締切日を過ぎた行は自動で「終了」になり末尾へ回る。
+// 進行バー・残日数の強調はしない方針(2026-08-17設計)
+const FALLBACK_DUTIES = [
+  {t:'夏季行事 実施報告', who:'各単位団', due:'2026/10/02', l:'shiryo.html?cat=夏季行事', note:''},
+  {t:'GF 旗手・選手宣誓 名簿記入', who:'担当部会', due:'2026/09/16', l:'', note:''},
+  {t:'令和8年度 本部登録', who:'各単位団', due:'2026/07/31', l:'', note:'次回 2027年3月'},
+];
+function dueDate(s){ const p = String(s||'').split('/'); return p.length===3 ? new Date(+p[0],+p[1]-1,+p[2],23,59) : null; }
+function renderDuties(items){
+  const box = document.getElementById('duty');
+  const now = new Date();
+  const list = items.map(d => {
+    const dd = dueDate(d.due);
+    return Object.assign({}, d, {open: !dd || dd >= now, dd: dd});
+  }).sort((a,b) => (a.open !== b.open) ? (a.open ? -1 : 1) : ((a.dd&&b.dd) ? a.dd-b.dd : 0));
+  box.innerHTML = list.map(d => {
+    const st = d.open ? '<span class="st">受付中</span>' : '<span class="st end">終了</span>';
+    const til = d.open && d.dd ? '期限 ' + (d.dd.getMonth()+1) + '月' + d.dd.getDate() + '日'
+              : (d.note || '受付終了');
+    const body = st + '<span>' + esc(d.t) + (d.who ? '(' + esc(d.who) + ')' : '') + '</span>' +
+                 '<span class="til">' + esc(til) + '</span>';
+    return (d.open && d.l)
+      ? '<a class="row" data-ripple href="' + esc(d.l) + '">' + body + '</a>'
+      : '<div class="row">' + body + '</div>';
+  }).join('') || '<div class="row"><span>現在、受付中の手続きはありません。</span></div>';
+}
+renderDuties(FALLBACK_DUTIES);
+window.onDuties = function(res){
+  try{
+    const labels = (res.table.cols || []).map(c => String(c.label || '').trim());
+    if(labels[0] !== '項目'){ return; }   // シート未作成時にgvizが別シートを返す対策
+    const items = (res.table.rows || []).map(r => ({
+      t: cellText(r,0), who: cellText(r,1), due: cellText(r,2), l: cellText(r,3),
+      note: cellText(r,4), hide: cellText(r,5)
+    })).filter(d => d.t && !d.hide.trim());
+    if(items.length){ renderDuties(items); }
+  }catch(e){ console.warn('手続きの読込に失敗', e); }
+};
+(function(){
+  const s = document.createElement('script');
+  s.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+          '/gviz/tq?tqx=out:json;responseHandler:onDuties&headers=1&sheet=' +
+          encodeURIComponent('手続き');
+  document.head.appendChild(s);
+})();
 
 // ---- ホーム画面追加ボタン ----
 // Android/PCのChrome系: beforeinstallpromptを捕まえてワンタップでインストール。
