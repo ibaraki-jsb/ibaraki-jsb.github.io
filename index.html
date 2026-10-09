@@ -224,7 +224,7 @@ renderNotices(FALLBACK_NOTICES);
 // シートが無い間は下の予備を表示。締切日を過ぎた行は自動で「終了」になり末尾へ回る。
 // 進行バー・残日数の強調はしない方針(2026-08-17設計)
 const FALLBACK_DUTIES = [
-  {t:'夏季行事 実施報告', who:'各単位団', due:'2026/10/02', l:'shiryo.html?cat=夏季行事', note:''},
+  {t:'夏季行事 実施報告', who:'各単位団', due:'2026/10/16', l:'shiryo.html?cat=夏季行事', note:'できるだけお早めに'},
   {t:'GF 旗手・選手宣誓 名簿記入', who:'担当部会', due:'', l:'', note:''},
   {t:'令和8年度 本部登録', who:'各単位団', due:'2026/07/31', l:'', note:'次回 2027年3月'},
 ];
@@ -238,8 +238,8 @@ function renderDuties(items){
   }).sort((a,b) => (a.open !== b.open) ? (a.open ? -1 : 1) : ((a.dd&&b.dd) ? a.dd-b.dd : 0));
   box.innerHTML = list.map(d => {
     const st = d.open ? '<span class="st">受付中</span>' : '<span class="st end">終了</span>';
-    // 締切日が空の手続きは期限表示なし(受付中のまま)。終了行は備考(次回案内など)を出す
-    const til = d.open ? (d.dd ? '期限 ' + (d.dd.getMonth()+1) + '月' + d.dd.getDate() + '日' : '')
+    // 締切日が空の手続きは期限表示なし(受付中のまま)。備考は受付中なら期限に添え、終了行では次回案内として出す
+    const til = d.open ? (d.dd ? '期限 ' + (d.dd.getMonth()+1) + '月' + d.dd.getDate() + '日' + (d.note ? '(' + d.note + ')' : '') : '')
               : (d.note || '受付終了');
     const body = st + '<span>' + esc(d.t) + (d.who ? '(' + esc(d.who) + ')' : '') + '</span>' +
                  (til ? '<span class="til">' + esc(til) + '</span>' : '');
