@@ -82,9 +82,12 @@
   .duty .st{flex:0 0 auto;font-size:.7rem;font-weight:700;border-radius:4px;padding:2px 8px;
       background:var(--wakaba-soft);color:var(--wakaba-deep)}
   .duty .st.end{background:var(--chip);color:var(--sub)}
+  .duty .st.plan{background:#eaf1f9;color:#2b5a8c}
+  .duty summary{padding:10px 16px;font-size:.85rem;color:var(--sub);cursor:pointer}
+  .duty details .row{border-top:1px solid var(--line);border-bottom:none}
   .duty .tx{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px}
   .duty .til{margin-left:auto;font-size:.78rem;color:var(--sub);white-space:nowrap}
-  @media (max-width:600px){ .duty .til{flex-basis:100%;margin-left:0} }
+  @media (max-width:600px){ .duty .til{flex-basis:100%;margin-left:0;white-space:normal} }
 
   /* お知らせ */
   .notice{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
@@ -152,7 +155,7 @@
 
 <section>
   <div class="wrap">
-    <h2 class="sec-title green">受付中の手続き</h2>
+    <h2 class="sec-title green">手続き</h2>
     <div class="duty" id="duty"></div>
   </div>
 </section>
@@ -222,45 +225,74 @@ function renderNotices(items){
 }
 renderNotices(FALLBACK_NOTICES);
 
-// ---- 受付中の手続き: 「手続き」シート(列: 項目|対象|締切日|リンク|備考|非表示)駆動 ----
-// シートが無い間は下の予備を表示。締切日を過ぎた行は自動で「終了」になり末尾へ回る。
+// ---- 手続き: 「手続き」シート(列: 項目|対象|担当|受付開始|締切日|提出方法|リンク|備考|非表示)駆動 ----
+// シートは年度の手続き台帳として行を残す。状態は日付で決める: 受付開始前=予定 / 期間中=受付中 / 締切後=終了。
+// 終了分は折りたたみにまとめ、トップを長くしない。非表示は誤登録などの例外用。
 // 進行バー・残日数の強調はしない方針(2026-08-17設計)
 const FALLBACK_DUTIES = [
   {t:'夏季行事 実施報告', who:'各単位団', due:'10月16日', l:'shiryo.html?cat=夏季行事', note:'お早めに'},
-  {t:'GF 旗手・選手宣誓 名簿記入', who:'担当部会', due:'', l:'', note:''},
   {t:'令和8年度 本部登録', who:'各単位団', due:'2026/07/31', l:'', note:'次回 2027年3月'},
 ];
-function dueDate(s){ const p = String(s||'').split('/'); return p.length===3 ? new Date(+p[0],+p[1]-1,+p[2],23,59) : null; }
+const DUTY_COLS = {t:'項目', who:'対象', tanto:'担当', start:'受付開始', due:'締切日', how:'提出方法', l:'リンク', note:'備考', hide:'非表示'};
+function ymd(s, h, m){ const p = String(s||'').trim().split('/'); return p.length===3 ? new Date(+p[0],+p[1]-1,+p[2],h,m) : null; }
+function mdLabel(dt){ return (dt.getMonth()+1) + '月' + dt.getDate() + '日'; }
+function dutyRow(d){
+  const cls = {open:'', plan:' plan', end:' end'}[d.state];
+  const name = {open:'受付中', plan:'予定', end:'終了'}[d.state];
+  // 締切日が年/月/日でない文字(例「10月16日」)なら自動終了させず、その文字をそのまま期限として出す
+  const dueLabel = d.dd ? mdLabel(d.dd) : String(d.due||'').trim();
+  const parts = [];
+  if(d.state === 'open'){
+    if(dueLabel){ parts.push('期限 ' + dueLabel + (d.note ? '(' + d.note + ')' : '')); }
+    else if(d.note){ parts.push(d.note); }
+  }else if(d.state === 'plan'){
+    parts.push('受付 ' + mdLabel(d.sd) + 'から' + (dueLabel ? '(期限 ' + dueLabel + ')' : ''));
+    if(d.note){ parts.push(d.note); }
+  }else{
+    parts.push(d.note || '受付終了');
+  }
+  if(d.how){ parts.push(d.how + 'で提出'); }
+  if(d.tanto){ parts.push('担当 ' + d.tanto); }
+  const body = '<span class="st' + cls + '">' + name + '</span><span class="tx"><span>' + esc(d.t) +
+               (d.who ? '(' + esc(d.who) + ')' : '') + '</span>' +
+               '<span class="til">' + esc(parts.join(' / ')) + '</span></span>';
+  return (d.state !== 'end' && d.l)
+    ? '<a class="row" data-ripple href="' + esc(d.l) + '">' + body + '</a>'
+    : '<div class="row">' + body + '</div>';
+}
 function renderDuties(items){
   const box = document.getElementById('duty');
   const now = new Date();
   const list = items.map(d => {
-    const dd = dueDate(d.due);
-    return Object.assign({}, d, {open: !dd || dd >= now, dd: dd});
-  }).sort((a,b) => (a.open !== b.open) ? (a.open ? -1 : 1) : ((a.dd&&b.dd) ? a.dd-b.dd : 0));
-  box.innerHTML = list.map(d => {
-    const st = d.open ? '<span class="st">受付中</span>' : '<span class="st end">終了</span>';
-    // 締切日が空の手続きは期限表示なし(受付中のまま)。備考は受付中なら期限に添え、終了行では次回案内として出す
-    // 締切日が年/月/日でない文字(例「10月16日」)なら自動終了させず、その文字をそのまま期限として出す
-    const dueLabel = d.dd ? (d.dd.getMonth()+1) + '月' + d.dd.getDate() + '日' : String(d.due||'').trim();
-    const til = d.open ? (dueLabel ? '期限 ' + dueLabel + (d.note ? '(' + d.note + ')' : '') : '')
-              : (d.note || '受付終了');
-    const body = st + '<span class="tx"><span>' + esc(d.t) + (d.who ? '(' + esc(d.who) + ')' : '') + '</span>' +
-                 (til ? '<span class="til">' + esc(til) + '</span>' : '') + '</span>';
-    return (d.open && d.l)
-      ? '<a class="row" data-ripple href="' + esc(d.l) + '">' + body + '</a>'
-      : '<div class="row">' + body + '</div>';
-  }).join('') || '<div class="row"><span>現在、受付中の手続きはありません。</span></div>';
+    const sd = ymd(d.start, 0, 0), dd = ymd(d.due, 23, 59);
+    const state = (sd && now < sd) ? 'plan' : (dd && now > dd) ? 'end' : 'open';
+    return Object.assign({}, d, {state: state, sd: sd, dd: dd});
+  });
+  const far = new Date(9999, 0, 1);
+  const open = list.filter(d => d.state === 'open').sort((a,b) => (a.dd||far) - (b.dd||far));
+  const plan = list.filter(d => d.state === 'plan').sort((a,b) => a.sd - b.sd);
+  const end  = list.filter(d => d.state === 'end').sort((a,b) => b.dd - a.dd);
+  const head = open.concat(plan).map(dutyRow).join('') ||
+               '<div class="row"><span>現在、受付中の手続きはありません。</span></div>';
+  const done = end.length
+    ? '<details><summary>終了した手続き(' + end.length + '件)</summary>' + end.map(dutyRow).join('') + '</details>'
+    : '';
+  box.innerHTML = head + done;
 }
 renderDuties(FALLBACK_DUTIES);
 window.onDuties = function(res){
   try{
     const labels = (res.table.cols || []).map(c => String(c.label || '').trim());
     if(labels[0] !== '項目'){ return; }   // シート未作成時にgvizが別シートを返す対策
-    const items = (res.table.rows || []).map(r => ({
-      t: cellText(r,0), who: cellText(r,1), due: cellText(r,2), l: cellText(r,3),
-      note: cellText(r,4), hide: cellText(r,5)
-    })).filter(d => d.t && !d.hide.trim());
+    const idx = {};
+    Object.keys(DUTY_COLS).forEach(k => { idx[k] = labels.indexOf(DUTY_COLS[k]); });
+    const missing = Object.keys(idx).filter(k => idx[k] < 0).map(k => DUTY_COLS[k]);
+    if(missing.length){ console.warn('手続きシートに無い列:', missing.join(', ')); }
+    const items = (res.table.rows || []).map(r => {
+      const o = {};
+      Object.keys(idx).forEach(k => { o[k] = idx[k] < 0 ? '' : cellText(r, idx[k]).trim(); });
+      return o;
+    }).filter(d => d.t && !d.hide);
     if(items.length){ renderDuties(items); }
   }catch(e){ console.warn('手続きの読込に失敗', e); }
 };
