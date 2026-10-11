@@ -82,7 +82,9 @@
   .duty .st{flex:0 0 auto;font-size:.7rem;font-weight:700;border-radius:4px;padding:2px 8px;
       background:var(--wakaba-soft);color:var(--wakaba-deep)}
   .duty .st.end{background:var(--chip);color:var(--sub)}
+  .duty .tx{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px}
   .duty .til{margin-left:auto;font-size:.78rem;color:var(--sub);white-space:nowrap}
+  @media (max-width:600px){ .duty .til{flex-basis:100%;margin-left:0} }
 
   /* お知らせ */
   .notice{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
@@ -224,7 +226,7 @@ renderNotices(FALLBACK_NOTICES);
 // シートが無い間は下の予備を表示。締切日を過ぎた行は自動で「終了」になり末尾へ回る。
 // 進行バー・残日数の強調はしない方針(2026-08-17設計)
 const FALLBACK_DUTIES = [
-  {t:'夏季行事 実施報告', who:'各単位団', due:'2026/10/16', l:'shiryo.html?cat=夏季行事', note:'できるだけお早めに'},
+  {t:'夏季行事 実施報告', who:'各単位団', due:'10月16日', l:'shiryo.html?cat=夏季行事', note:'お早めに'},
   {t:'GF 旗手・選手宣誓 名簿記入', who:'担当部会', due:'', l:'', note:''},
   {t:'令和8年度 本部登録', who:'各単位団', due:'2026/07/31', l:'', note:'次回 2027年3月'},
 ];
@@ -239,10 +241,12 @@ function renderDuties(items){
   box.innerHTML = list.map(d => {
     const st = d.open ? '<span class="st">受付中</span>' : '<span class="st end">終了</span>';
     // 締切日が空の手続きは期限表示なし(受付中のまま)。備考は受付中なら期限に添え、終了行では次回案内として出す
-    const til = d.open ? (d.dd ? '期限 ' + (d.dd.getMonth()+1) + '月' + d.dd.getDate() + '日' + (d.note ? '(' + d.note + ')' : '') : '')
+    // 締切日が年/月/日でない文字(例「10月16日」)なら自動終了させず、その文字をそのまま期限として出す
+    const dueLabel = d.dd ? (d.dd.getMonth()+1) + '月' + d.dd.getDate() + '日' : String(d.due||'').trim();
+    const til = d.open ? (dueLabel ? '期限 ' + dueLabel + (d.note ? '(' + d.note + ')' : '') : '')
               : (d.note || '受付終了');
-    const body = st + '<span>' + esc(d.t) + (d.who ? '(' + esc(d.who) + ')' : '') + '</span>' +
-                 (til ? '<span class="til">' + esc(til) + '</span>' : '');
+    const body = st + '<span class="tx"><span>' + esc(d.t) + (d.who ? '(' + esc(d.who) + ')' : '') + '</span>' +
+                 (til ? '<span class="til">' + esc(til) + '</span>' : '') + '</span>';
     return (d.open && d.l)
       ? '<a class="row" data-ripple href="' + esc(d.l) + '">' + body + '</a>'
       : '<div class="row">' + body + '</div>';
